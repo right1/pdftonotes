@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="">
+  <meta name="author" content="">
+  <link rel="icon" href="https://puu.sh/BHK17/ffefb78022.png">
+
+  <title>PDF to notes</title>
+  <!-- <link rel="canonical" href="https://getbootstrap.com/docs/4.0/examples/starter-template/"> -->
+
+  <!-- Bootstrap core CSS -->
+  <link href="css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-switch/3.3.4/css/bootstrap3/bootstrap-switch.min.css" rel="stylesheet">
+  <style>
+    textarea {
+      position: absolute;
+      left: -100%;
+    }
+
+    div.dropzone {
+      /* positions to point 0,0 - required for z-index */
+      position: fixed;
+      top: 0;
+      left: 0;
+      /* above all elements, even if z-index is used elsewhere
+       it can be lowered as needed, but this value surpasses
+       all elements when used on YouTube for example. */
+      z-index: 9999999999;
+      /* takes up 100% of page */
+      width: 100%;
+      height: 100%;
+      /* dim the page with 50% black background when visible */
+      background-color: rgba(0, 0, 0, 0.5);
+      /* a nice fade effect, visibility toggles after 175ms, opacity will animate for 175ms. note display:none cannot be animated.  */
+      transition: visibility 175ms, opacity 175ms;
+    }
+
+    .column {
+      width: 50%
+    }
+
+    .column3 {
+      width: 33%
+    }
+  </style>
+
+</head>
+
+<body>
+
+
+  <div class="container">
+    <div style="visibility:hidden; opacity:0" id="dropzone" class="dropzone"></div>
+    <div>
+      <div id="blueBanner" style="display:none" class="alert alert-primary" role="alert">
+        <span id="bannerText_blue">Open the Options Menu for better results. Now added quizlet support.</span>
+      </div>
+      <div id="yellowBanner" style="display:none" class="alert alert-warning" role="alert">
+        <span id="bannerText_yellow">No splitters set. Used suggested splitters.</span>
+      </div>
+      <div id="redBanner" style="display:none" class="alert alert-danger" role="alert">
+        <span id="bannerText_red"></span>
+      </div>
+      <h1>PDF to notes </h1>
+      <label class="btn btn-danger btn-file" style="display:inline-block">
+        <span id="filename">Click to select file (or drag and drop)</span><input type="file" id="pdfUpload" name="pdfUpload"
+          accept=".pdf" style="display: none;">
+      </label>
+      <label id="btnConvert" class="btn btn-success">Convert</label>
+      <label id="btnCopy" class="btn btn-primary">Copy to clipboard</label>
+      <label class="btn btn-warning" data-toggle="modal" data-target="#options">Options</label>
+      <label class="btn btn-info" data-toggle="modal" data-target="#info">Info</label>
+      
+      <br>
+      <button type="button" id="suggestedSplitterBtn" class="btn btn-info" data-toggle="tooltip" data-placement="right" title="leave empty to use these, click on one to remove, click this button to copy all bullet points">
+        <span id="suggestedSplitterBtn_text">Suggested Bullet Points </span><span class="badge bg-dark" style="font-size:1em">&#9432;</span>
+      </button>
+      <!--
+      --><code id="suggestedSplitter1" class="suggestedSplitter">Detected bullet points will appear here</code><!--
+      --><div style="display:inline-block;width:3vh"></div>
+      <!--
+      --><code id="suggestedSplitter2" class="suggestedSplitter">Click to remove</code><!--
+      --><div style="display:inline-block;width:3vh"></div><!--
+      --><code id="suggestedSplitter3" class="suggestedSplitter">If results turn out weird, copy paste the bullet points directly into the boxes below (separate with comma)</code><!--
+      --><div style="display:inline-block;width:3vh"></div><!--
+      --><code id="suggestedSplitter4" class="suggestedSplitter"></code><!--
+      --><br></br>
+      <div class="row container-fluid">
+        <div class="column3">
+
+          <input style="width:90%" class="form-control" placeholder="Bullet Points (1)" id="splitter1" type="text">
+        </div>
+        <div class="column3">
+          <input style="width:90%" class="form-control" placeholder="Bullet Points (2)" id="splitter2" type="text">
+        </div>
+        <div class="column3">
+          <input style="width:90%" class="form-control" placeholder="Bullet Points (3)" id="splitter3" type="text">
+        </div>
+      </div>
+
+
+
+      <div style="display:inline-block;height:5vh"></div>
+      <!-- HOWTO BUTTONS -->
+      <label class="btn btn-info" style="display:none" id="quizletInfoBtn" data-toggle="modal" data-target="#quizletInfo">
+        How to use?
+      </label>
+      <label class="btn btn-success help" style="display:none" id="helpBtn" data-toggle="modal" data-target="#help">
+        How to use?
+      </label>
+      <label class="btn btn-dark help" style="display:none;background-color:darkblue" id="convertQuizlet">
+        Convert in Quizlet Format
+      </label>
+      <hr>
+      </hr>
+      <pre id="result">Result will go here</pre>
+
+      <!--MODALS -->
+      <!-- HOWTO FOR QUIZLET -->
+      <div class="modal" id="quizletInfo" tabindex="-1" role="dialog">
+        <div class="modal-dialog" role="document">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title">How to use (Quizlet)</h5>
+              <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+              </button>
+            </div>
+            <div class="modal-body">
+              <p>1. Use the 'copy to clipboard' button</p>
+              <p>2. Go<a href="https://quizlet.com/create-set"> here</a></p>
+              <p>3. Click Import from Word, Excel, Google Docs, etc.</p>
+              <p>4. Use custom for both options, option 1 (between term and definition): type "^^^", option 2 (between cards): type ";;;"</p>
+              <p>5. Paste into the 'Import your data' Box</p>
+              <p>To set parameters to include/exclude elements (headers, footers, specific words, etc.), be sure to explore the options and info menus</p>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+      <!-- HOWTO FOR DOCS/WORD -->
+      <div class="modal" id="help" tabindex="-1" role="dialog">
+        <div class="modal-dialog" role="document">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title">How to use (paste into Docs/Word)</h5>
+              <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+              </button>
+            </div>
+            <div class="modal-body">
+              <p>1. Use the 'copy to clipboard' button</p>
+              <p>2. Paste into an empty file</p>
+              <p>3. Select (highlight) the content you just pasted (Ctrl+A for an empty file)</p>
+              <p>4. Enable the list formatting option<img src="https://puu.sh/BHK17/ffefb78022.png" alt="Google docs pic"></p>
+              <p>To set parameters to include/exclude elements (headers, footers, specific words, etc.), be sure to explore the options and info menus</p>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+      <!-- MAIN INFO MENU -->
+      <div class="modal" id="info" tabindex="-1" role="dialog">
+        <div class="modal-dialog" role="document">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title">Info</h5>
+              <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+              </button>
+            </div>
+            <div class="modal-body">
+              <p>IMPORTANT: This will only work on documents with highlightable text.</p>
+              <p>Quizlet Support: Use the import option, then copy paste. Under "Between term and definition" select custom
+                and type "^^^" and for "Between cards" select custom and type ";;;"</p>
+              <p>Other information: </p>
+              <p>Bullet points: different bullet point box=different indentation.</p>
+              <p>For numbered bullet points (1. 2. 3. ...) type NUM or type any number as the bullet point</p>
+              <p>To use multiple bullet points with the same indentation, separate them with a ',' in each respective box</p>
+              <p>How to paste (Tested in Docs and Word):</p>
+              <p>1. Paste into an empty file</p>
+              <p>2. Select (highlight) the content you just pasted (Ctrl+A for an empty file)</p>
+              <p>3. Enable the list formatting option<img src="https://puu.sh/BHK17/ffefb78022.png" alt="Google docs pic"></p>
+              <br></br>
+              <p>My uses of the other features:</p>
+              <p>Bad words: removing a header from a slide</p>
+              <p>Nasty words: slides that I didn't want in my notes (iClicker)</p>
+              <p>ignoreThreshold: slides with just pictures</p>
+              <p>Excluding elements: If the header and footer are consistently in the first or last few elements of the page</p>
+              <a href="https://github.com/right1/right1.github.io/tree/master/pdftonotes">Github page</a>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+      <!--OPTIONS MENU-->
+      <div class="modal" id="options" tabindex="-1" role="dialog">
+        <div class="modal-dialog modal-lg" role="document">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title">Options (Hover for more info)</h5>
+              <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+              </button>
+            </div>
+            <div class="modal-body">
+              <div class="row">
+                <div class="column"><span data-toggle="tooltip" data-placement="right" title="Copy paste to create flashcards, see info for more details">
+                  Quizlet Format<div style="display:inline-block;width:3%"></div></span></div>
+                <div class="column" id="quizletParent"><input name="bsswitch" type="checkbox" id="quizletFormat" value="option1"></div>
+              </div>
+              <div class="row">
+                <div class="column"><span data-toggle="tooltip" data-placement="right" title="Trims words that aren't necessary (the, and, etc.)">
+                  Trim Unnecessary Words<div style="display:inline-block;width:3%"></div></span></div>
+                <div class="column"><input name="bsswitch" type="checkbox" id="trimExtra" value="option1"></div>
+              </div>
+              <div class="row">
+                <div class="column"><span data-toggle="tooltip" data-placement="right" title="Automatically tries to remove page numbers">
+                  Remove page numbers<div style="display:inline-block;width:3%"></div></span></div>
+                <div class="column"><input name="bsswitch" type="checkbox" id="pageNumberDetection" value="option1" checked></div>
+              </div>
+              <div class="row">
+                <div class="column"><span data-toggle="tooltip" data-placement="right" title="If pdf uses numbers as bullet points, this is what comes after the number">
+                  Num Delim<div style="display:inline-block;width:3%"></div></span></div>
+                <div class="column"><input type="text" class="form-control" placeholder="Number delim" value="." id="numDelim"
+                    type="text"></div>
+              </div>
+              <div class="row">
+                <div class="column"><span data-toggle="tooltip" data-placement="right" title="Pages with character count less than this will be excluded">
+                  Ignore threshold<div style="display:inline-block;width:3%"></div></span></div>
+                <div class="column"><input type="number" class="form-control" placeholder="ignore" id="ignoreThreshold" type="number"
+                    value="100"></div>
+              </div>
+
+              <div class="row">
+                <div class="column" style="width:25%"><span data-toggle="tooltip" data-placement="right" title="Excludes detected phrases. (Separate with ',')">
+                  Bad Words<div style="display:inline-block;width:3%"></div></span></div>
+                <div class="column" style="width:75%"><input type="text" class="form-control" placeholder="Separate with ','"
+                    id="badWords" type="text"></div>
+              </div>
+              <div class="row">
+                <div class="column" style="width:25%"><span data-toggle="tooltip" data-placement="right" title="Excludes detected pages/ slides. (Separate with ',')">
+                  Nasty Words<div style="display:inline-block;width:3%"></div></span></div>
+                <div class="column" style="width:75%"><input type="text" class="form-control" placeholder="Separate with ','"
+                    id="nastyWords" type="text"></div>
+              </div>
+              <div class="row">
+                <div class="column"><span data-toggle="tooltip" data-placement="right" title="Page to start at">Page start:<div
+                      style="display:inline-block;width:3%"></div></span></div>
+                <div class="column"><input type="number" class="form-control" placeholder="page start" id="pageStart" type="number"
+                    value="0"></div>
+              </div>
+              <div class="row">
+                <div class="column"><span data-toggle="tooltip" data-placement="right" title="Page to end at">Page end:<div
+                      style="display:inline-block;width:3%"></div></span></div>
+                <div class="column"><input type="number" class="form-control" placeholder="page end" id="pageEnd" type="number"
+                    value="0"></div>
+              </div>
+              <div class="row">
+                <div class="column"><span data-toggle="tooltip" data-placement="right" title="Experiment with this if there's an annoying header/footer on each page">
+                  Elements to exclude at beginning of page:<div style="display:inline-block;width:3%"></div></span></div>
+                <div class="column"><input type="number" class="form-control" placeholder="Exclude at beginning of page"
+                    id="excludeStart" type="number" value="0"></div>
+              </div>
+              <div class="row">
+                <div class="column"><span data-toggle="tooltip" data-placement="right" title="Experiment with this if there's an annoying header/footer on each page">
+                  Elements to exclude at end of page:<div style="display:inline-block;width:3%"></div></span></div>
+                <div class="column"><input type="number" class="form-control" placeholder="Exclude at end of page" id="excludeEnd"
+                    type="number" value="0"></div>
+              </div>
+              <div class="row">
+                <h6>EXPERIMENTAL</h6>
+              </div>
+              <div class="row">
+                <div class="column"><span data-toggle="tooltip" data-placement="right" title="Adds line spacing automatically (Try if theres a lack of bullet points)">
+                  AutoAdd line spacing<div style="display:inline-block;width:3%"></div></span></div>
+                <div class="column"><input name="bsswitch" type="checkbox" id="addNewLine" value="option1"></div>
+              </div>
+              <div class="row">
+                <div class="column"><span data-toggle="tooltip" data-placement="right" title="Adds indentation after headers (Use if lack of bullet points after header)">
+                  Add tabs after headers<div style="display:inline-block;width:3%"></div></span></div>
+                <div class="column"><input name="bsswitch" type="checkbox" id="headerDelim" value="option1"></div>
+              </div>
+
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+
+
+  <!-- Bootstrap core JavaScript
+    ================================================== -->
+  <!-- Placed at the end of the document so the pages load faster -->
+
+  <script src="https://code.jquery.com/jquery-3.3.1.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8="
+    crossorigin="anonymous"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/tether/1.4.0/js/tether.min.js" integrity="sha384-DztdAPBWPRXSA/3eYEEUWrWCy7G5KFbe8fFjk5JAIxUYHKkDx6Qin1DkWx51bBrb"
+    crossorigin="anonymous"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js"></script>
+  <script src="js/bootstrap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-switch/3.3.4/js/bootstrap-switch.min.js"></script>
+  <script src="https://mozilla.github.io/pdf.js/build/pdf.js"></script>
+  <script src="js/pdftolist.js"></script>
+</body>
+
+</html>
