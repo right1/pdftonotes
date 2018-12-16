@@ -134,7 +134,7 @@ $(function () {
         hideQuizletBtn();
         hideHelpBtn();
         $('#result').text('Result is being loaded...');
-        var finalText_array = [];
+        var finalText_array = [""];
         var fileReader = new FileReader();
         var pageStart = parseInt($('#pageStart').val());
         var pageEnd = parseInt($('#pageEnd').val());
@@ -158,18 +158,19 @@ $(function () {
                             result = (trimExtra) ? trimExtraWords(result) : result;
                             finalText_array[index] = (quizletFormat) ? result + quizletEndPage : result;
                             var actuallyFull = true;
-
-                            if (finalText_array.length - 1 === pageEnd) {
-                                for (var j = pageStart; j < finalText_array.length; j++) {
-                                    if (finalText_array[j] == null) {
-                                        actuallyFull = false;
-                                        break;
-                                    }
+                            for (var j = pageStart; j <=pageEnd; j++) {
+                                if (finalText_array[j] == null) {
+                                    actuallyFull = false;
+                                    break;
                                 }
-                            } else {
-                                actuallyFull = false;
                             }
+                            // if (finalText_array.length - 1 === pageEnd) {
+                                
+                            // } else {
+                            //     actuallyFull = false;
+                            // }
                             if (actuallyFull) {
+                                // console.log(finalText_array);
                                 updateResult(finalText_array.join('').replace(/EMPTYPAGE/g, ''));
                             }
 
@@ -681,16 +682,30 @@ $(function () {
                 }
                 finalText = finalText.replace(/ACTUAL;;NUM/g, '');
                 if(multipleFlashcards && quizletFormat){
-                    finalText=validate(finalText);
+                    finalText=validate(finalText,split1);
                 }
                 (ignored) ? callback('EMPTYPAGE', pageNumber, firstChars, detectedHeaders) : callback(finalText, pageNumber, firstChars, detectedHeaders);
             })
         });
     }
-    function validate(text){
+    function validate(text,split1){
         var slides=text.split(quizletEndPage);
         if(slides.length==0)return text;
         var title="";
+        if(slides.length==1){
+            //replace first bullet point and return
+            var lowestIndex=-1;
+            for(var i=0;i<split1.length;i++){
+                if(text.indexOf(split1[i])!=-1){
+                    lowestIndex=text.indexOf(split1[i]);
+                }
+            }
+            if(lowestIndex==-1){
+                return text;
+            }else{
+                return text.substr(0,lowestIndex)+quizletHeader+text.substr(lowestIndex+1,text.length);
+            }
+        }
         if(slides[0].indexOf(quizletHeader)==-1){
             title=slides[0];
             title+=": "
@@ -739,7 +754,7 @@ $(function () {
         while(occurrences(slides[x],quizletHeader)>1){
             slides[x]=replaceLastInstance(quizletHeader,slides[x],'\n');
         }
-        console.log(slides);
+        // console.log(slides);
         return slides.join(quizletEndPage);
         function replaceLastInstance(badtext, str, replacer) {
             if(!replacer)replacer="";
@@ -877,13 +892,15 @@ $(function () {
         var userTextArray = userText.split('\n');
         var elementsToRemove = [];
         for (var i = 0; i < userTextArray.length; i++) {
-            while (userTextArray[i].indexOf(' ') == 0) {
+            while (userTextArray[i].indexOf(' ') == 0) {//removing leading spaces
                 userTextArray[i] = userTextArray[i].replace(' ', '');
             }
             if (userTextArray[i] == "") {
                 elementsToRemove.push(i);
             }
         }
+        // console.log(elementsToRemove);
+        // console.log(userTextArray);
         for (var i = elementsToRemove.length - 1; i >= 0; i--) {
             userTextArray.splice(elementsToRemove[i], 1);
         }
