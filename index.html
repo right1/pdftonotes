@@ -92,42 +92,16 @@
     <div style="visibility:hidden; opacity:0" id="dropzone" class="dropzone"></div>
     <div>
       <div style="height:1rem"></div>
-      <label class="btn btn-outline-danger btn-file" style="display:inline-block">
+      <button class="btn btn-outline-danger btn-file" style="display:inline-block">
         <span id="filename">Click to select file (or drag and drop)</span><input type="file" id="pdfUpload" name="pdfUpload"
           accept=".pdf" style="display: none;">
-      </label>
-      <label id="btnConvert" class="btn btn-outline-success">Convert</label>
-      <label id="btnCopy" class="btn btn-outline-primary">Copy to clipboard</label>
-      <label class="btn btn-outline-warning" data-toggle="modal" data-target="#options">Options</label>
+      </button>
+      <button id="btnConvert" class="btn btn-outline-success">Convert</button>
+      <button id="btnCopy" class="btn btn-outline-primary">Copy to clipboard</button>
+      <button class="btn btn-outline-warning" data-toggle="modal" data-target="#options">Options</button>
 
 
       <br>
-      <div style="display:none">
-        <button type="button" id="suggestedSplitterBtn" class="btn btn-info" data-toggle="tooltip" data-placement="right"
-          title="leave empty to use these, click on one to remove, click this button to copy all bullet points">
-          <span id="suggestedSplitterBtn_text">Suggested Bullet Points </span><span class="badge bg-dark" style="font-size:1em">&#9432;</span>
-        </button>
-        <!--
-        --><code id="suggestedSplitter1" class="suggestedSplitter">Detected bullet points will appear here</code>
-        <!--
-        -->
-        <div style="display:inline-block;width:3vh"></div>
-        <!--
-        --><code id="suggestedSplitter2" class="suggestedSplitter">Click to remove</code>
-        <!--
-        -->
-        <div style="display:inline-block;width:3vh"></div>
-        <!--
-        --><code id="suggestedSplitter3" class="suggestedSplitter">If results turn out weird, copy paste the bullet points directly into the boxes below (separate with comma)</code>
-        <!--
-        -->
-        <div style="display:inline-block;width:3vh"></div>
-        <!--
-        --><code id="suggestedSplitter4" class="suggestedSplitter"></code>
-        <!--
-        -->
-      </div>
-      <br></br>
       <div class="row container-fluid">
         <div class="column">
           <p>Highest bullet point</p>

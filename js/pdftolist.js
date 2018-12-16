@@ -41,6 +41,7 @@ $(function () {
             'time_hide': 450,
             'time_duration': 2500
         });
+        
     }, 1500);
     $('#multipleFlashcards').bootstrapSwitch('state', true);
     //HTML ONCHANGE EVENTS
