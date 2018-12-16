@@ -634,7 +634,7 @@ $(function () {
                         if (j == headerSemi && quizletFormat && !multipleFlashcards) {
                             finalText += quizletHeader;
                         }else if(j == headerSemi && quizletFormat){
-                            pageText+=quizletHeader;
+                            // pageText+=quizletHeader;
                         }
                     }
                     // console.log(pageText);
@@ -701,9 +701,9 @@ $(function () {
             
             while(occurrences(slides[x],quizletHeader)>1){
                 if(slides[x].indexOf(quizletHeader)<3){
-                    slides[x]=slides[x].replace(quizletHeader,"");
+                    slides[x]=slides[x].replace(quizletHeader,"\n");
                 }else{
-                    slides[x]=replaceLastInstance(quizletHeader,slides[x],false);
+                    slides[x]=replaceLastInstance(quizletHeader,slides[x],"\n");
                 }
             }
             if(slides[x].indexOf(quizletHeader)==-1&&madeTitleSlide==-1){
@@ -740,7 +740,7 @@ $(function () {
             slides[x]=replaceLastInstance(quizletHeader,slides[x],'\n');
         }
         console.log(slides);
-        return text;
+        return slides.join(quizletEndPage);
         function replaceLastInstance(badtext, str, replacer) {
             if(!replacer)replacer="";
             var charpos = str.lastIndexOf(badtext);
@@ -922,7 +922,7 @@ $(function () {
             splitterCount = 1;
         }
         if (splitterCount < 2) {
-            return splitterProcess(userText, replacer, split1, split2);
+            return splitterProcess(userText, replacer, split1, split2,[]);
         }
         if (split1.indexOf("NUM") != -1) {
             userText = splitterReplace_Num(userText, numDelim, "⎠", 1);
@@ -936,7 +936,7 @@ $(function () {
             var index2 = foundSplitter(userText, split2);
             if (index1 == -1 || index2 == -1) break;
             if (index2 < index1) {
-                userText = userText.substr(0, index2) + bullet + userText.substr(index2 + 1);
+                userText = userText.substr(0, index2) + '\n'+bullet + userText.substr(index2 + 1);
                 continue;
             }
             // console.log("before: " + userText);
