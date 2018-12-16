@@ -35,11 +35,11 @@ $(function () {
     setTimeout(function(){
         showBanner({
             'color':'blue',
-            'time_show': 500,
-            'time_hide': 500,
-            'time_duration': 5000
+            'time_show': 450,
+            'time_hide': 450,
+            'time_duration': 2500
         });
-    },2000); 
+    },1500); 
     //HTML ONCHANGE EVENTS
     $('#quizletFormat').on('switchChange.bootstrapSwitch', function (event, state) {
         quizletFormat=state;
@@ -821,7 +821,7 @@ $(function () {
             if(DEBUG)console.log('The file "' + fileName + '" has been selected.');
             showBanner({
                 'color': 'yellow',
-                'text': 'Detecting Splitters...',
+                'text': 'Detecting Bullet Points...',
                 'time_show': 250
             })
             detectSplitters();
