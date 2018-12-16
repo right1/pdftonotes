@@ -42,6 +42,7 @@ $(function () {
             'time_duration': 2500
         });
     }, 1500);
+    $('#multipleFlashcards').bootstrapSwitch('state', true);
     //HTML ONCHANGE EVENTS
     $('#quizletFormat').on('switchChange.bootstrapSwitch', function (event, state) {
         quizletFormat = state;
