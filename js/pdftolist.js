@@ -62,7 +62,7 @@ $(function () {
         multipleFlashcards = state;
     });
     $('input[type="file"]').change(function (e) {
-        var fileName = (e.target.files[0]) ? e.target.files[0].name : "Click to select file (or drag and drop)";
+        var fileName = (e.target.files[0]) ? e.target.files[0].name : "Select file (or drag and drop)";
         userPDF = e.target.files[0];
         if (userPDF.type != "application/pdf") {
             console.error(userPDF.name, " is not a pdf file.")
@@ -959,7 +959,7 @@ $(function () {
         document.getElementById('dropzone').style.visibility = "hidden";
         document.getElementById('dropzone').style.opacity = 0;
         if (e.dataTransfer.files.length == 1) {
-            var fileName = (e.dataTransfer.files[0]) ? e.dataTransfer.files[0].name : "Click to select file (or drag and drop)";
+            var fileName = (e.dataTransfer.files[0]) ? e.dataTransfer.files[0].name : "Select file (or drag and drop)";
             userPDF = e.dataTransfer.files[0];
             if (userPDF.type != "application/pdf") {
                 console.error(userPDF.name, "is not a pdf file.")
