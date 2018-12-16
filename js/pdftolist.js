@@ -1,8 +1,8 @@
 //Elements to exclude from splitter detection
-const BLACKLIST=['/','\u200b','\t','\n',',' ,"'" ,"-" ,String.fromCharCode(160) ,String.fromCharCode(8239),
-':','≠','"','(',')','”',';','.',';','=','Δ','ε','δ','α','x','β','π','ρ','φ',' ','μ','×'];
+const BLACKLIST = ['/', '\u200b', '\t', '\n', ',', "'", "-", String.fromCharCode(160), String.fromCharCode(8239),
+    ':', '≠', '"', '(', ')', '”', ';', '.', ';', '=', 'Δ', 'ε', 'δ', 'α', 'x', 'β', 'π', 'ρ', 'φ', ' ', 'μ', '×'];
 //Dictionary of extra words to trim
-const EXTRAWORDS={
+const EXTRAWORDS = {
     'This is the ': '',
     'this is the ': '',
     'as well': '',
@@ -14,9 +14,9 @@ const EXTRAWORDS={
     ' the ': ' ',
     'The ': ''
 }
-const DEBUG=false;//print debug messages to console
-const quizletHeader='^^^';//Quizlet delimiter after header
-const quizletEndPage=';;;';//Quizlet delimiter after page
+const DEBUG = false;//print debug messages to console
+const quizletHeader = '^^^';//Quizlet delimiter after header
+const quizletEndPage = ';;;';//Quizlet delimiter after page
 $(function () {
     //HTML INITIAL SETUP
     $('[data-toggle="tooltip"]').tooltip();
@@ -26,46 +26,51 @@ $(function () {
     var badWords = [];
     var nastyWords = [];
     var pdfjsLib = window['pdfjs-dist/build/pdf'];
-    var suggestedSplitters=[];
+    var suggestedSplitters = [];
     pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://mozilla.github.io/pdf.js/build/pdf.worker.js';
-    var quizletFormat=false;
-    var bullet='\t';
+    var quizletFormat = false;
+    var bullet = '\t';
     var userPDF;
-    var trimExtra=true;
-    setTimeout(function(){
+    var trimExtra = true;
+
+    var multipleFlashcards = true;
+    setTimeout(function () {
         showBanner({
-            'color':'blue',
+            'color': 'blue',
             'time_show': 450,
             'time_hide': 450,
             'time_duration': 2500
         });
-    },1500); 
+    }, 1500);
     //HTML ONCHANGE EVENTS
     $('#quizletFormat').on('switchChange.bootstrapSwitch', function (event, state) {
-        quizletFormat=state;
-        $('#trimExtra').bootstrapSwitch('state',state);
-        if(quizletFormat){
-            
-            bullet='-';
-        }else{
-            bullet='\t';
+        quizletFormat = state;
+        $('#trimExtra').bootstrapSwitch('state', state);
+        if (quizletFormat) {
+
+            bullet = '-';
+        } else {
+            bullet = '\t';
         }
-    }); 
+    });
     $('#trimExtra').on('switchChange.bootstrapSwitch', function (event, state) {
-        trimExtra=state;
-    }); 
+        trimExtra = state;
+    });
+    $('#multipleFlashcards').on('switchChange.bootstrapSwitch', function (event, state) {
+        multipleFlashcards= state;
+    });
     $('input[type="file"]').change(function (e) {
         var fileName = (e.target.files[0]) ? e.target.files[0].name : "Click to select file (or drag and drop)";
         userPDF = e.target.files[0];
         if (userPDF.type != "application/pdf") {
             console.error(userPDF.name, " is not a pdf file.")
-            alert(userPDF.name+ " is not a pdf file.");
+            alert(userPDF.name + " is not a pdf file.");
             return;
         }
         $('#filename').text(fileName);
 
 
-        if(DEBUG)console.log('The file "' + fileName + '" has been selected.');
+        if (DEBUG) console.log('The file "' + fileName + '" has been selected.');
         showBanner({
             'color': 'yellow',
             'text': 'Detecting Bullet Points...',
@@ -80,17 +85,17 @@ $(function () {
             $('.options').hide();
         }
     })
-    $('.suggestedSplitter').click(function(e){
-        this.innerText="";
+    $('.suggestedSplitter').click(function (e) {
+        this.innerText = "";
     });
-    $('#suggestedSplitterBtn').click(function(){
-        var tmp=$('#suggestedSplitterBtn_text').text();
-        $('#suggestedSplitterBtn_text').text('Copied the text: '+suggestedSplitters.join('')+'\t');
-        setTimeout(function(){
+    $('#suggestedSplitterBtn').click(function () {
+        var tmp = $('#suggestedSplitterBtn_text').text();
+        $('#suggestedSplitterBtn_text').text('Copied the text: ' + suggestedSplitters.join('') + '\t');
+        setTimeout(function () {
             $('#suggestedSplitterBtn_text').text(tmp);
-        },2500);
-        for(var i=1;i<=suggestedSplitters.length;i++){
-            $('#suggestedSplitter'+i).text(suggestedSplitters[i-1]);
+        }, 2500);
+        for (var i = 1; i <= suggestedSplitters.length; i++) {
+            $('#suggestedSplitter' + i).text(suggestedSplitters[i - 1]);
         }
         const textArea = document.createElement('textarea');
         textArea.textContent = suggestedSplitters.join('');
@@ -114,16 +119,16 @@ $(function () {
     $('#btnConvert').click(function () {
         startConversion();
     });
-    $('#convertQuizlet').click(function(){
-        $('#trimExtra').bootstrapSwitch('state',true);
-        $('#quizletFormat').bootstrapSwitch('state',true);
+    $('#convertQuizlet').click(function () {
+        $('#trimExtra').bootstrapSwitch('state', true);
+        $('#quizletFormat').bootstrapSwitch('state', true);
         startConversion();
     });
     //FUNCTIONS
-    function startConversion(){
+    function startConversion() {
         if (!userPDF || !userPDF.type || userPDF.type != "application/pdf") {
-            console.error((userPDF&&userPDF.name)?userPDF.name + " is not a pdf file.": "No PDF file selected");
-            alert((userPDF&&userPDF.name)?userPDF.name + " is not a pdf file.": "No PDF file selected");
+            console.error((userPDF && userPDF.name) ? userPDF.name + " is not a pdf file." : "No PDF file selected");
+            alert((userPDF && userPDF.name) ? userPDF.name + " is not a pdf file." : "No PDF file selected");
             return;
         }
         hideQuizletBtn();
@@ -148,30 +153,30 @@ $(function () {
                 if (isNaN(excludeStart)) excludeStart = 0;
                 var count = pageStart;
                 for (var i = pageStart; i <= pageEnd; i++) {
-                    try{
+                    try {
                         getPageText(pdf, i, excludeStart, excludeEnd, ignoreThreshold, function (result, index) {
-                            result=(trimExtra)?trimExtraWords(result):result;
-                            finalText_array[index] = (quizletFormat)?result+quizletEndPage:result;
-                            var actuallyFull=true;
-                            
+                            result = (trimExtra) ? trimExtraWords(result) : result;
+                            finalText_array[index] = (quizletFormat) ? result + quizletEndPage : result;
+                            var actuallyFull = true;
+
                             if (finalText_array.length - 1 === pageEnd) {
-                                for(var j=pageStart;j<finalText_array.length;j++){
-                                    if(finalText_array[j]==null){
-                                        actuallyFull=false;
+                                for (var j = pageStart; j < finalText_array.length; j++) {
+                                    if (finalText_array[j] == null) {
+                                        actuallyFull = false;
                                         break;
                                     }
                                 }
-                            }else{
-                                actuallyFull=false;
+                            } else {
+                                actuallyFull = false;
                             }
-                            if(actuallyFull){
+                            if (actuallyFull) {
                                 updateResult(finalText_array.join('').replace(/EMPTYPAGE/g, ''));
                             }
-                                
-                            
+
+
                         });
-                    }catch(e){
-                        console.log("Failed on getPageText: "+e)
+                    } catch (e) {
+                        console.log("Failed on getPageText: " + e)
                     }
                 }
             });
@@ -185,78 +190,78 @@ $(function () {
     //time_show: show animation duration (default: 0)
     //time_hide: hide animation duration (default: 0)
     //time_duration: time to show banner (ms) (default: don't hide)
-    function showBanner(params){
-        var bannerColor=params['color']||'blue';
-        var text=params['text']||false;
-        var t_show=params['time_show']||0;
-        var t_hide=params['time_hide']||0;
-        var duration=params['time_duration']||false;
-        if(text){
-            $('#bannerText_'+bannerColor).text(text);
+    function showBanner(params) {
+        var bannerColor = params['color'] || 'blue';
+        var text = params['text'] || false;
+        var t_show = params['time_show'] || 0;
+        var t_hide = params['time_hide'] || 0;
+        var duration = params['time_duration'] || false;
+        if (text) {
+            $('#bannerText_' + bannerColor).text(text);
         }
-        $('#'+bannerColor+'Banner').show(t_show);
-        if(duration){
-            setTimeout(function(){
-                $('#'+bannerColor+'Banner').hide(t_hide);
-            },duration)
+        $('#' + bannerColor + 'Banner').show(t_show);
+        if (duration) {
+            setTimeout(function () {
+                $('#' + bannerColor + 'Banner').hide(t_hide);
+            }, duration)
         }
     }
     //hideBanner: hides banner alert
     //PARAMETERS
     //color: red, blue, yellow (default: blue)
     //time_hide: hide animation duration (default: 0)
-    function hideBanner(params){
-        var bannerColor=params['color']||'blue';
-        var t_hide=params['time_hide']||0;
-        $('#'+bannerColor+'Banner').hide(t_hide);
+    function hideBanner(params) {
+        var bannerColor = params['color'] || 'blue';
+        var t_hide = params['time_hide'] || 0;
+        $('#' + bannerColor + 'Banner').hide(t_hide);
     }
-    function showQuizletBtn(){
+    function showQuizletBtn() {
         setTimeout(function () {
             $('#quizletInfoBtn').show(100);
         }, 100);
     }
-    function showHelpBtn(){
+    function showHelpBtn() {
         setTimeout(function () {
             $('.help').show(100);
         }, 100);
     }
-    function hideQuizletBtn(){
+    function hideQuizletBtn() {
         setTimeout(function () {
             $('#quizletInfoBtn').hide(100);
         }, 100);
     }
-    function hideHelpBtn(){
+    function hideHelpBtn() {
         setTimeout(function () {
             $('.help').hide(100);
         }, 100);
     }
-    function trimExtraWords(text){
-        var keepReplacing=true;
-        while(keepReplacing){
-            keepReplacing=false;
-            $.each(EXTRAWORDS,function(key,value){
-                if(text.indexOf(key)!=-1){
-                    keepReplacing=true;
-                    text=text.replace(key,value);
-                    if(DEBUG&&false)console.log([key,value]);
+    function trimExtraWords(text) {
+        var keepReplacing = true;
+        while (keepReplacing) {
+            keepReplacing = false;
+            $.each(EXTRAWORDS, function (key, value) {
+                if (text.indexOf(key) != -1) {
+                    keepReplacing = true;
+                    text = text.replace(key, value);
+                    if (DEBUG && false) console.log([key, value]);
                 }
             })
         }
         return text;
     }
-    function trimWhitespace(textArray){
-        try{
-            for(x in textArray){
-                textArray[x]=textArray[x].trim();
+    function trimWhitespace(textArray) {
+        try {
+            for (x in textArray) {
+                textArray[x] = textArray[x].trim();
             }
-        }catch(e){
+        } catch (e) {
             console.log(e);
-            alert("String trim failed, error: "+e);
+            alert("String trim failed, error: " + e);
             return textArray;
         }
         return textArray;
     }
-    function arrangeDetectedSplitters(foundSplitters,firstChars){
+    function arrangeDetectedSplitters(foundSplitters, firstChars) {
         for (x in firstChars) {
             if (firstChars[x].substring(0, 1) == ' ') {
                 firstChars[x] = firstChars[x].substring(1, firstChars[x].length);
@@ -283,12 +288,12 @@ $(function () {
                 }
             });
             if (!splitterExists) {
-                foundSplitters[firstChars[x]] = {count: 1,foundAt: x};
+                foundSplitters[firstChars[x]] = { count: 1, foundAt: x };
             }
         }
         return foundSplitters;
     }
-    function getBestSplitters(foundSplitters,amount){
+    function getBestSplitters(foundSplitters, amount) {
         while (Object.keys(foundSplitters).length >= amount) {
             var lowestVal;
             var lowestVal_value = Number.MAX_SAFE_INTEGER;
@@ -302,57 +307,57 @@ $(function () {
         }
         return foundSplitters;
     }
-    
-    function setSuggestedSplitters(foundSplitters){
+
+    function setSuggestedSplitters(foundSplitters) {
         //sort them by foundAt
-        var splitters_with_foundAt=[];
-        var splitters_sorted=[];
+        var splitters_with_foundAt = [];
+        var splitters_sorted = [];
         while (Object.keys(foundSplitters).length > 0) {
-            if(splitters_with_foundAt.length>=3)break;
+            if (splitters_with_foundAt.length >= 3) break;
             var highestVal;
             var highestVal_value = -1;
-            var highestVal_foundAt=-1;
+            var highestVal_foundAt = -1;
             $.each(foundSplitters, function (key, value) {
                 if (foundSplitters[key]['count'] > highestVal_value) {
                     highestVal = key;
                     highestVal_value = foundSplitters[key]['count'];
-                    highestVal_foundAt=foundSplitters[key]['foundAt'];
+                    highestVal_foundAt = foundSplitters[key]['foundAt'];
                 }
             });
-            if (highestVal_value > 2 &&highestVal!="") {
-                var blacklisted=false;
-                for(var blk=0;blk<BLACKLIST.length;blk++){
-                    if(highestVal.indexOf(BLACKLIST[blk])!=-1){
-                        blacklisted=true;
+            if (highestVal_value > 2 && highestVal != "") {
+                var blacklisted = false;
+                for (var blk = 0; blk < BLACKLIST.length; blk++) {
+                    if (highestVal.indexOf(BLACKLIST[blk]) != -1) {
+                        blacklisted = true;
                         break;
                     }
                 }
-                if(!blacklisted){
-                    splitters_with_foundAt.push({"value": highestVal,"foundAt":highestVal_foundAt});
+                if (!blacklisted) {
+                    splitters_with_foundAt.push({ "value": highestVal, "foundAt": highestVal_foundAt });
                 }
             }
             delete foundSplitters[highestVal];
         }
-        while(splitters_with_foundAt.length>0){
-            var lowestFoundAt=splitters_with_foundAt[0]['foundAt'];
-            var bestIndex=0;
-            for(var i=1;i<splitters_with_foundAt.length;i++){
-                if(splitters_with_foundAt[i]['foundAt']<lowestFoundAt){
-                    lowestFoundAt=splitters_with_foundAt[i]['foundAt'];
-                    bestIndex=i;
+        while (splitters_with_foundAt.length > 0) {
+            var lowestFoundAt = splitters_with_foundAt[0]['foundAt'];
+            var bestIndex = 0;
+            for (var i = 1; i < splitters_with_foundAt.length; i++) {
+                if (splitters_with_foundAt[i]['foundAt'] < lowestFoundAt) {
+                    lowestFoundAt = splitters_with_foundAt[i]['foundAt'];
+                    bestIndex = i;
                 }
             }
             splitters_sorted.push(splitters_with_foundAt[bestIndex]['value']);
-            splitters_with_foundAt.splice(bestIndex,1);
+            splitters_with_foundAt.splice(bestIndex, 1);
         }
         return splitters_sorted;
     }
-    function displaySuggestedSplitters(splitters){
-        if($('#splitter1').val().length>1||$('#splitter2').val().length>1||$('#splitter3').val().length>1){
+    function displaySuggestedSplitters(splitters) {
+        if ($('#splitter1').val().length > 1 || $('#splitter2').val().length > 1 || $('#splitter3').val().length > 1) {
             return;
         }
-        for(var i=0;i<splitters.length;i++){
-            $('#splitter'+(i+1)).val(splitters[i]);
+        for (var i = 0; i < splitters.length; i++) {
+            $('#splitter' + (i + 1)).val(splitters[i]);
         }
     }
     function detectSplitters() {
@@ -371,77 +376,77 @@ $(function () {
         fileReader.onload = function () {
             var typedarray = new Uint8Array(this.result);
             pdfjsLib.getDocument(typedarray).then(function (pdf) {
-                var detectedHeaders={};
+                var detectedHeaders = {};
                 if (isNaN(pageEnd) || pageEnd == 0) pageEnd = pdf.numPages;
                 if (isNaN(pageStart) || pageStart == 0) pageStart = 1;
                 if (isNaN(excludeEnd)) excludeEnd = 0;
                 if (isNaN(excludeStart)) excludeStart = 0;
                 for (var i = pageStart; i <= pageEnd; i++) {
-                    try{
-                        getPageText(pdf, i, excludeStart, excludeEnd, ignoreThreshold, function (result, index,firstChars,detectedHeaders) {
+                    try {
+                        getPageText(pdf, i, excludeStart, excludeEnd, ignoreThreshold, function (result, index, firstChars, detectedHeaders) {
                             finalText_array[index] = result;
                             if (finalText_array.length - 1 === pageEnd && finalText_array.every(element => element !== null)) {
-                                var actuallyFull=true;
-                                for(var j=pageStart;j<finalText_array.length;j++){
-                                    if(finalText_array[j]==null){
-                                        actuallyFull=false;
+                                var actuallyFull = true;
+                                for (var j = pageStart; j < finalText_array.length; j++) {
+                                    if (finalText_array[j] == null) {
+                                        actuallyFull = false;
                                         break;
                                     }
                                 }
-                                if(actuallyFull){
+                                if (actuallyFull) {
                                     if (finalText_array.every(element => element === "EMPTYPAGE")) {
                                         alert("Couldn't detect any text in that file.");
                                     }
-                                    if(DEBUG)console.log(detectedHeaders);
+                                    if (DEBUG) console.log(detectedHeaders);
                                     var foundSplitters = {};
-                                    foundSplitters=arrangeDetectedSplitters(foundSplitters,firstChars);
-                                    foundSplitters=getBestSplitters(foundSplitters,8);
-                                    suggestedSplitters=setSuggestedSplitters(foundSplitters);
+                                    foundSplitters = arrangeDetectedSplitters(foundSplitters, firstChars);
+                                    foundSplitters = getBestSplitters(foundSplitters, 8);
+                                    suggestedSplitters = setSuggestedSplitters(foundSplitters);
                                     displaySuggestedSplitters(suggestedSplitters);
                                     // displayBestSplitters(foundSplitters,4,true,'#suggestedSplitter');
                                     hideBanner({//hiding detecting splitters banner
                                         'color': 'yellow',
                                         'time_hide': 250
                                     })
-                                    detectBadWords({"pageCount":pageEnd-pageStart+1,"detectedHeaders":detectedHeaders});
+                                    detectBadWords({ "pageCount": pageEnd - pageStart + 1, "detectedHeaders": detectedHeaders });
                                 }
                             }
-                        },detectedHeaders);
-                    }catch(e){
-                        console.log("Failed on getPageText: "+e)
+                        }, detectedHeaders);
+                    } catch (e) {
+                        console.log("Failed on getPageText: " + e)
                     }
                 }
             });
         };
         fileReader.readAsArrayBuffer(userPDF);
     }
-    function detectBadWords(params){
-        var pageCount=params['pageCount']||0;
-        var detectedHeaders=params['detectedHeaders'];
+    function detectBadWords(params) {
+        var pageCount = params['pageCount'] || 0;
+        var detectedHeaders = params['detectedHeaders'];
         var highestVal;
-        var highestVal_value=1;
-        $.each(detectedHeaders,function(key,value){
-            if(value>highestVal_value&&key.length>2){
-                highestVal=key;
-                highestVal_value=value;
+        var highestVal_value = 1;
+        $.each(detectedHeaders, function (key, value) {
+            if (value > highestVal_value && key.length > 2) {
+                highestVal = key;
+                highestVal_value = value;
             }
         });
-        if(highestVal_value>pageCount/12&&highestVal_value>2&&highestVal.length>2&&trimWhitespace($('#badWords').val().split(',')).indexOf(highestVal)==-1){
-            if($('#badWords').val()==""){
+        if (highestVal_value > pageCount / 12 && highestVal_value > 2 && highestVal.length > 2 && trimWhitespace($('#badWords').val().split(',')).indexOf(highestVal) == -1) {
+            if ($('#badWords').val() == "") {
                 $('#badWords').val(highestVal);
-            }else{
-                $('#badWords').val($('#badWords').val()+','+highestVal);
+            } else {
+                $('#badWords').val($('#badWords').val() + ',' + highestVal);
             }
             showBanner({
                 'color': 'red',
-                'text': 'Added "'+highestVal+'" to exclusion list.',
+                'text': 'Added "' + highestVal + '" to exclusion list.',
                 'time_show': 250,
                 'time_hide': 250,
                 'time_duration': 4000
             })
         }
     }
-    function splitter_detectNumbers(splitters){
+    function splitter_detectNumbers(splitters) {
         for (x in splitters) {
             if (splitters[x].match(/[0-9]/i)) {
                 splitters[x] = "NUM";
@@ -449,67 +454,67 @@ $(function () {
         }
         return splitters;
     }
-    function detectHeader(textContent,headerSemi){
-        var textContent_ini=textContent;
-        if(headerSemi==-1)headerSemi=0;
-        try{
-            var max_Height=textContent.items[0].height;
-            var max_index=0;
-            for(var i=0;i<textContent.items.length;i++){
-                if(textContent.items[i].height>max_Height){
-                    max_Height=textContent.items[i].height;
-                    max_index=i;
+    function detectHeader(textContent, headerSemi) {
+        var textContent_ini = textContent;
+        if (headerSemi == -1) headerSemi = 0;
+        try {
+            var max_Height = textContent.items[0].height;
+            var max_index = 0;
+            for (var i = 0; i < textContent.items.length; i++) {
+                if (textContent.items[i].height > max_Height) {
+                    max_Height = textContent.items[i].height;
+                    max_index = i;
                 }
             }
-            if(textContent.items[headerSemi].height==max_Height){
+            if (textContent.items[headerSemi].height == max_Height) {
                 //header at beginning
-                
-                var num=headerSemi;
-                while(textContent.items[num].height==textContent.items[headerSemi].height){
+
+                var num = headerSemi;
+                while (textContent.items[num].height == textContent.items[headerSemi].height) {
                     num++;
                 }
-                headerSemi=num;
-            }else if(textContent.items[textContent.items.length-1].height==max_Height){
+                headerSemi = num;
+            } else if (textContent.items[textContent.items.length - 1].height == max_Height) {
                 //header at end
-                var lastElement=textContent.items.pop();
+                var lastElement = textContent.items.pop();
                 textContent.items.unshift(lastElement);
-                if(DEBUG)console.log("shifted "+i);
+                if (DEBUG) console.log("shifted " + i);
             }
             //If its bad word
-            var skipOver=findBadWords(textContent.items[headerSemi].str,false);
-            if(DEBUG&&skipOver)console.log("found bad word");
+            var skipOver = findBadWords(textContent.items[headerSemi].str, false);
+            if (DEBUG && skipOver) console.log("found bad word");
             var detectNumber = textContent.items[headerSemi].str.replace(/ /g, "");
             var parsedInt = parseInt(detectNumber);
-            for(var i=0;i<100;i++){
-                if ($('#pageNumberDetection').is(':checked') && detectNumber.indexOf('.') == -1 && parsedInt==i&&detectNumber.length < 3) {
-                    skipOver=true;
-                    if(DEBUG)console.log("found page number");
+            for (var i = 0; i < 100; i++) {
+                if ($('#pageNumberDetection').is(':checked') && detectNumber.indexOf('.') == -1 && parsedInt == i && detectNumber.length < 3) {
+                    skipOver = true;
+                    if (DEBUG) console.log("found page number");
                     break
                 }
             }
-            
-            if(skipOver&&headerSemi<textContent.items.length-1){
+
+            if (skipOver && headerSemi < textContent.items.length - 1) {
                 headerSemi++;
-                return detectHeader(textContent,headerSemi);
+                return detectHeader(textContent, headerSemi);
             }
-        }catch(e){
-            if(DEBUG)console.log(e);
-            return{
-                "headerSemi":headerSemi,
-                "textContent":textContent_ini,
+        } catch (e) {
+            if (DEBUG) console.log(e);
+            return {
+                "headerSemi": headerSemi,
+                "textContent": textContent_ini,
                 "error": e
             }
         }
-        return{
-            "headerSemi":headerSemi,
-            "textContent":textContent,
+        return {
+            "headerSemi": headerSemi,
+            "textContent": textContent,
             "error": false
         }
     }
-    function ignoreLoop(textContent){
-        var nastyWord=false;
-        var charCount=0;
-        var firstChars=[];
+    function ignoreLoop(textContent) {
+        var nastyWord = false;
+        var charCount = 0;
+        var firstChars = [];
         for (var j = 0; j < textContent.items.length; j++) {
             if (textContent.items[j].str.substring(0, 1).match(/[a-z]/i) || textContent.items[j].str.substring(1, 2).match(/[a-z]/i)) {
             } else {
@@ -525,21 +530,21 @@ $(function () {
             charCount += textContent.items[j].str.length;
         }
         return {
-            "charCount" : charCount,
+            "charCount": charCount,
             "nastyWord": nastyWord,
             "firstChars": firstChars
         }
     }
-    function findBadWords(textItem,checkLength){
-        var chk=(checkLength)?checkLength:true;
+    function findBadWords(textItem, checkLength) {
+        var chk = (checkLength) ? checkLength : true;
         for (var k = 0; k < badWords.length; k++) {
             if (textItem.indexOf(badWords[k]) != -1 && (badWords[k].length >= textItem.length / 2 || !chk)) {
-                return badWords[0]!=="";
+                return badWords[0] !== "";
             }
         }
         return false;
     }
-    function getPageText(pdf, pageNumber, excludeStart, excludeEnd, ignore, callback,detectedHeaders) {
+    function getPageText(pdf, pageNumber, excludeStart, excludeEnd, ignore, callback, detectedHeaders) {
         var finalText = "";
         var addTab = false;
         var headerDelim = ($('#headerDelim').is(':checked')) ? true : false;
@@ -548,147 +553,301 @@ $(function () {
                 var split1 = trimWhitespace($('#splitter1').val().split(','));
                 var split2 = trimWhitespace($('#splitter2').val().split(','));
                 var split3 = trimWhitespace($('#splitter3').val().split(','));
-                split1=splitter_detectNumbers(split1);
-                split2=splitter_detectNumbers(split2);
-                split3=splitter_detectNumbers(split3);
-                var headerSemi=-1;
-                var detectHeader_result=detectHeader(textContent,headerSemi);
-                headerSemi=detectHeader_result['headerSemi'];
-                textContent=detectHeader_result['textContent'];
-                var numSearch=[1];
+                split1 = splitter_detectNumbers(split1);
+                split2 = splitter_detectNumbers(split2);
+                split3 = splitter_detectNumbers(split3);
+                var headerSemi = -1;
+                var detectHeader_result = detectHeader(textContent, headerSemi);
+                headerSemi = detectHeader_result['headerSemi'];
+                textContent = detectHeader_result['textContent'];
+                var numSearch = [1];
                 var ignored = false;
                 var charCount = 0;
                 var nastyWord = false;
-                var ignoreLoop_result=ignoreLoop(textContent);
-                nastyWord=ignoreLoop_result['nastyWord'];
-                charCount=ignoreLoop_result['charCount'];
-                var firstChars=ignoreLoop_result['firstChars'];
+                var ignoreLoop_result = ignoreLoop(textContent);
+                nastyWord = ignoreLoop_result['nastyWord'];
+                charCount = ignoreLoop_result['charCount'];
+                var firstChars = ignoreLoop_result['firstChars'];
                 if (charCount < ignore || nastyWord) {
                     ignored = true;
                 }
                 if (!$('#addNewLine').is(':checked')) finalText += '\n';
-                if(detectedHeaders&&typeof detectedHeaders=="object"){
-                    detectedHeaders=updateDetectedHeaders(textContent.items,detectedHeaders);
+                if (detectedHeaders && typeof detectedHeaders == "object") {
+                    detectedHeaders = updateDetectedHeaders(textContent.items, detectedHeaders);
                 }
-                
-                for (var j = excludeStart; j < textContent.items.length - excludeEnd; j++) {
-                    var detectNumber = textContent.items[j].str.replace(/ /g, "");
-                    var parsedInt = parseInt(detectNumber);
-                    if ($('#pageNumberDetection').is(':checked') && detectNumber.indexOf('.') == -1 && parsedInt==pageNumber&&detectNumber.length < 3) {
-                        if(j==headerSemi)headerSemi++;
-                        continue;
-                    } else {
-                        var textItem = textContent.items[j].str;
-                        var remove = findBadWords(textItem);
-                        if (remove) {
-                            if(j==headerSemi)headerSemi++;
-                        }else {
-                            if (textItem == ' ') {
-                                addTab = false;
-                            }
-                            if ($('#addNewLine').is(':checked') && (textItem.length > 150 || textContent.items[j].height > 10)) {
-                                finalText += '\n';
-                                addTab = true;
-                            } else if (headerDelim && addTab && textItem != ' ') {
-                                finalText += '\t'
-                                addTab = false;
-                            }
-                            if ((split3.indexOf('NUM') !=-1  || split2.indexOf('NUM') !=-1 || split1.indexOf('NUM') !=-1) && textItem.length > 3) {
-                                var findProtectNumbers_result=findProtectNumbers(textItem,numSearch);
-                                textItem=findProtectNumbers_result['text'];
-                                numSearch=findProtectNumbers_result['numSearch'];
-                            }
-                            if(j<=headerSemi){
-                                // var useSuggestedSplitters = false;
-                                // if ((split1.length == 0 || (split1.length == 1 && split1[0] == '')) && (split2.length == 0 || (split2.length == 1 && split2[0] == '')) && (split3.length == 0 || (split3.length == 1 && split3[0] == ''))) {
-                                //     useSuggestedSplitters = true;
-                                //     split1 = [];
-                                //     split2 = [];
-                                //     split3 = [];
-                                //     for (var index = 1; index <= 4;index++) {
-                                //         if ($('#suggestedSplitter' + index).text().length > 0) {
-                                //             if (index <= 2) split1.push($('#suggestedSplitter' +index).text());
-                                //             else if (index == 3) split2.push($('#suggestedSplitter' +index).text());
-                                //             else split3.push($('#suggestedSplitter' +index).text());
-                                //         }
-                                //     }
-                                // }
-                                finalText+=splitterProcess(textItem,"",split1,split2,split3);
-                            }else{
-                                finalText += textItem;
+                var splitterCount = 0;
+                if (split3.length > 0 && split3[0] != "") {
+                    splitterCount = 3;
+                } else if (split2.length > 0 && split2[0] != "") {
+                    splitterCount = 2;
+                } else if (split1.length > 0 && split1[0] != "") {
+                    splitterCount = 1;
+                }
+                if (!multipleFlashcards || splitterCount < 2 || true) {
+                    var pageText = "";
+                    for (var j = excludeStart; j < textContent.items.length - excludeEnd; j++) {
+                        var detectNumber = textContent.items[j].str.replace(/ /g, "");
+                        var parsedInt = parseInt(detectNumber);
+                        if ($('#pageNumberDetection').is(':checked') && detectNumber.indexOf('.') == -1 && parsedInt == pageNumber && detectNumber.length < 3) {
+                            if (j == headerSemi) headerSemi++;
+                            continue;
+                        } else {
+                            var textItem = textContent.items[j].str;
+                            var remove = findBadWords(textItem);
+                            if (remove) {
+                                if (j == headerSemi) headerSemi++;
+                            } else {
+                                if (textItem == ' ') {
+                                    addTab = false;
+                                }
+                                if ($('#addNewLine').is(':checked') && (textItem.length > 150 || textContent.items[j].height > 10)) {
+                                    finalText += '\n';
+                                    addTab = true;
+                                } else if (headerDelim && addTab && textItem != ' ') {
+                                    finalText += '\t'
+                                    addTab = false;
+                                }
+                                if ((split3.indexOf('NUM') != -1 || split2.indexOf('NUM') != -1 || split1.indexOf('NUM') != -1) && textItem.length > 3) {
+                                    var findProtectNumbers_result = findProtectNumbers(textItem, numSearch);
+                                    textItem = findProtectNumbers_result['text'];
+                                    numSearch = findProtectNumbers_result['numSearch'];
+                                }
+                                if (j <= headerSemi) {
+                                    if (multipleFlashcards && quizletFormat) {
+                                        pageText += textItem;
+                                        // finalText += splitterProcess_mult(textItem, quizletEndPage, split1, split2);
+                                        // finalText+=quizletHeader;
+                                    } else {
+                                        finalText += splitterProcess(textItem, "", split1, split2, split3);
+                                    }
+                                } else {
+                                    if (multipleFlashcards && quizletFormat) {
+                                        pageText += textItem;
+                                        // finalText+=quizletHeader;
+                                    } else {
+                                        finalText += textItem;
+                                    }
+
+                                }
                             }
                         }
+                        if (j == headerSemi && quizletFormat && !multipleFlashcards) {
+                            finalText += quizletHeader;
+                        }else if(j == headerSemi && quizletFormat){
+                            pageText+=quizletHeader;
+                        }
                     }
-                    if(j==headerSemi&&quizletFormat){
-                        finalText+=quizletHeader;
+                    // console.log(pageText);
+                    if (pageText != "") {
+                        finalText += splitterProcess_mult(pageText, "", split1, split2);
                     }
+                } else {
+                    var pageText = "";
+                    for (var j = excludeStart; j < textContent.items.length - excludeEnd; j++) {
+                        var detectNumber = textContent.items[j].str.replace(/ /g, "");
+                        var parsedInt = parseInt(detectNumber);
+                        if ($('#pageNumberDetection').is(':checked') && detectNumber.indexOf('.') == -1 && parsedInt == pageNumber && detectNumber.length < 3) {
+                            if (j == headerSemi) headerSemi++;
+                            continue;
+                        } else {
+                            var textItem = textContent.items[j].str;
+                            var remove = findBadWords(textItem);
+                            if (remove) {
+                                if (j == headerSemi) headerSemi++;
+                            } else {
+                                if (textItem == ' ') {
+                                    addTab = false;
+                                }
+                                if ($('#addNewLine').is(':checked') && (textItem.length > 150 || textContent.items[j].height > 10)) {
+                                    finalText += '\n';
+                                    addTab = true;
+                                } else if (headerDelim && addTab && textItem != ' ') {
+                                    finalText += '\t'
+                                    addTab = false;
+                                }
+                                if ((split3.indexOf('NUM') != -1 || split2.indexOf('NUM') != -1 || split1.indexOf('NUM') != -1) && textItem.length > 3) {
+                                    var findProtectNumbers_result = findProtectNumbers(textItem, numSearch);
+                                    textItem = findProtectNumbers_result['text'];
+                                    numSearch = findProtectNumbers_result['numSearch'];
+                                }
+                                pageText += splitterProcess(textItem, "", split1, [], [])
+                            }
+                        }
+                        // if (j == headerSemi && quizletFormat) {
+                        //     finalText += quizletHeader;
+                        // }
+                    }
+                    finalText += pageText;
                 }
                 finalText = finalText.replace(/ACTUAL;;NUM/g, '');
-                (ignored) ? callback('EMPTYPAGE', pageNumber,firstChars,detectedHeaders) : callback(finalText, pageNumber,firstChars,detectedHeaders);
+                if(multipleFlashcards && quizletFormat){
+                    finalText=validate(finalText);
+                }
+                (ignored) ? callback('EMPTYPAGE', pageNumber, firstChars, detectedHeaders) : callback(finalText, pageNumber, firstChars, detectedHeaders);
             })
         });
     }
-    function updateDetectedHeaders(textItemArray,detectedHeaders){
-        if(textItemArray[0]){//First Element
-            if(detectedHeaders[textItemArray[0].str]){
+    function validate(text){
+        var slides=text.split(quizletEndPage);
+        if(slides.length==0)return text;
+        var title="";
+        if(slides[0].indexOf(quizletHeader)==-1){
+            title=slides[0];
+            title+=": "
+            slides.shift();
+        }
+        var madeTitleSlide=-1;
+        for(x in slides){
+            
+            while(occurrences(slides[x],quizletHeader)>1){
+                if(slides[x].indexOf(quizletHeader)<3){
+                    slides[x]=slides[x].replace(quizletHeader,"");
+                }else{
+                    slides[x]=replaceLastInstance(quizletHeader,slides[x],false);
+                }
+            }
+            if(slides[x].indexOf(quizletHeader)==-1&&madeTitleSlide==-1){
+                slides[x]=title+quizletHeader+slides[x];
+                madeTitleSlide=x;
+                console.log("title slide made");
+                // console.log(slides);
+            }else if(slides[x].indexOf(quizletHeader)>3){
+                slides[x]=title+slides[x];
+            }
+            if(slides[x].split(quizletHeader)[0].length>50){
+                if(madeTitleSlide>-1){
+                    console.log("detected long title, but title slide exists");
+                }else{
+                    madeTitleSlide=x;
+                    slides[x]=slides[x].replace(title,"");
+                    slides[x]=slides[x].replace(quizletHeader,"");
+                    slides[x]=title+quizletHeader+slides[x];
+                }
+            }
+        }
+        for(x in slides){
+            if(slides[x].indexOf(quizletHeader)<3){
+                slides[madeTitleSlide]+='\n';
+                slides[madeTitleSlide]+=slides[x];
+            }
+        }
+        for(x in slides){
+            if(slides[x].indexOf(quizletHeader)<3){
+                slides.splice(x,1);
+            }
+        }
+        while(occurrences(slides[x],quizletHeader)>1){
+            slides[x]=replaceLastInstance(quizletHeader,slides[x],'\n');
+        }
+        console.log(slides);
+        return text;
+        function replaceLastInstance(badtext, str, replacer) {
+            if(!replacer)replacer="";
+            var charpos = str.lastIndexOf(badtext);
+            if (charpos<0) return str;
+            ptone = str.substring(0,charpos);
+            pttwo = str.substring(charpos+(badtext.length));
+            return (ptone+replacer+pttwo);
+        }
+    }
+    // function processFullPage(text, split1, split2, split3) {
+    //     split1 = splitter_detectNumbers(split1);
+    //     split2 = splitter_detectNumbers(split2);
+    //     split3 = splitter_detectNumbers(split3);
+    //     //only process split1, split2 -> split3 handled after
+    //     var numDelim = $('#numDelim').val();
+    //     while(foundSplitter(text,split1))
+    //     if (splitterCount > 2) {
+    //         userText = splitterReplace(split3, userText, replacer, 3);
+    //     }
+    //     if (splitterCount > 2 && split3.indexOf("NUM") != -1) {
+    //         userText = splitterReplace_Num(userText, numDelim, replacer, 3);
+    //     }
+
+    //     if (splitterCount > 1) {
+    //         userText = splitterReplace(split2, userText, replacer, 2);
+    //     }
+    //     if (splitterCount > 1 && split2.indexOf("NUM") != -1) {
+    //         userText = splitterReplace_Num(userText, numDelim, replacer, 2);
+    //     }
+
+    //     if (splitterCount > 0) {
+    //         userText = splitterReplace(split1, userText, replacer, 1);
+    //     }
+    //     if (splitterCount > 0 && split1.indexOf("NUM") != -1) {
+    //         userText = splitterReplace_Num(userText, numDelim, replacer, 1);
+    //     }
+    //     return userText;
+    //     function foundSplitter(text,splitters){
+    //         for(x in splitters){
+    //             if(text.indexOf(splitters[x])!=-1){
+    //                 return true;
+    //             }
+    //         }
+    //         return false;
+    //     }
+    // }
+    function updateDetectedHeaders(textItemArray, detectedHeaders) {
+        if (textItemArray[0]) {//First Element
+            if (detectedHeaders[textItemArray[0].str]) {
                 detectedHeaders[textItemArray[0].str]++;
-            }else{
-                detectedHeaders[textItemArray[0].str]=1;
+            } else {
+                detectedHeaders[textItemArray[0].str] = 1;
             }
         }
-        if(textItemArray[1]){//Second Element
-            if(detectedHeaders[textItemArray[1].str]){
+        if (textItemArray[1]) {//Second Element
+            if (detectedHeaders[textItemArray[1].str]) {
                 detectedHeaders[textItemArray[1].str]++;
-            }else{
-                detectedHeaders[textItemArray[1].str]=1;
+            } else {
+                detectedHeaders[textItemArray[1].str] = 1;
             }
         }
-        if(textItemArray[textItemArray.length-1]){//Last element
-            if(detectedHeaders[textItemArray[textItemArray.length-1].str]){
-                detectedHeaders[textItemArray[textItemArray.length-1].str]++;
-            }else{
-                detectedHeaders[textItemArray[textItemArray.length-1].str]=1;
+        if (textItemArray[textItemArray.length - 1]) {//Last element
+            if (detectedHeaders[textItemArray[textItemArray.length - 1].str]) {
+                detectedHeaders[textItemArray[textItemArray.length - 1].str]++;
+            } else {
+                detectedHeaders[textItemArray[textItemArray.length - 1].str] = 1;
             }
         }
-        if(textItemArray[textItemArray.length-2]){//Second to Last element
-            if(detectedHeaders[textItemArray[textItemArray.length-2].str]){
-                detectedHeaders[textItemArray[textItemArray.length-2].str]++;
-            }else{
-                detectedHeaders[textItemArray[textItemArray.length-2].str]=1;
+        if (textItemArray[textItemArray.length - 2]) {//Second to Last element
+            if (detectedHeaders[textItemArray[textItemArray.length - 2].str]) {
+                detectedHeaders[textItemArray[textItemArray.length - 2].str]++;
+            } else {
+                detectedHeaders[textItemArray[textItemArray.length - 2].str] = 1;
             }
         }
         return detectedHeaders;
     }
-    function findProtectNumbers(textItem,numSearch){
-        for (var index = 0; index <=numSearch.length; index++) {
-            if (textItem.indexOf(numSearch[index] + $('#numDelim').val()) != -1 ) {
-                if(DEBUG)console.log(numSearch[index]+" found in",textItem);
+    function findProtectNumbers(textItem, numSearch) {
+        for (var index = 0; index <= numSearch.length; index++) {
+            if (textItem.indexOf(numSearch[index] + $('#numDelim').val()) != -1) {
+                if (DEBUG) console.log(numSearch[index] + " found in", textItem);
                 textItem = textItem.replace(numSearch[index] + $('#numDelim').val(), numSearch[index] + "ACTUAL;;NUM" + $('#numDelim').val());
                 numSearch[index]++;
             }
         }
-        var keepReplacing=true;
-        while(keepReplacing){
-            keepReplacing=false;
+        var keepReplacing = true;
+        while (keepReplacing) {
+            keepReplacing = false;
             for (var protectNum = 100; protectNum > 0; protectNum--) {
-                if (textItem.indexOf(protectNum + $('#numDelim').val()) != -1){
+                if (textItem.indexOf(protectNum + $('#numDelim').val()) != -1) {
                     keepReplacing = true;
-                    if(DEBUG)console.log(protectNum + " protected in",textItem);
-                } 
-                textItem = textItem.replace(protectNum + $('#numDelim').val(), protectNum+"PLA.'CEHOLDER" + $('#numDelim').val());
+                    if (DEBUG) console.log(protectNum + " protected in", textItem);
+                }
+                textItem = textItem.replace(protectNum + $('#numDelim').val(), protectNum + "PLA.'CEHOLDER" + $('#numDelim').val());
             }
         }
         return {
-            "text":textItem,
-            "numSearch":numSearch
+            "text": textItem,
+            "numSearch": numSearch
         }
     }
     function updateResult(text) {
         var convertedText = convertText(text);
         $('#result').text(convertedText);
-        (quizletFormat)?showQuizletBtn():showHelpBtn();
+        (quizletFormat) ? showQuizletBtn() : showHelpBtn();
     }
-    
+
     function convertText(userText) {
         // var useSuggestedSplitters = false;
         var split1 = trimWhitespace($('#splitter1').val().split(','));
@@ -714,7 +873,7 @@ $(function () {
         //         }
         //     }
         // }
-        userText=splitterProcess(userText,bullet,split1,split2,split3);
+        userText = splitterProcess(userText, bullet, split1, split2, split3);
         var userTextArray = userText.split('\n');
         var elementsToRemove = [];
         for (var i = 0; i < userTextArray.length; i++) {
@@ -732,29 +891,77 @@ $(function () {
         userTextArray_joined = userTextArray_joined.replace(/PLA.'CEHOLDER/g, '');
         return userTextArray_joined;
     }
-    function splitterReplace(splitters,text,replacer,replacerRepeat){
+    function splitterReplace(splitters, text, replacer, replacerRepeat) {
         for (splitter in splitters) {
             while (splitters[splitter] != "NUM" && splitters[splitter] != "" && text.indexOf(splitters[splitter]) != -1) {
-                text = text.replace(splitters[splitter], "\n"+replacer.repeat(replacerRepeat));
+                text = text.replace(splitters[splitter], "\n" + replacer.repeat(replacerRepeat));
             }
         }
         return text;
     }
-    function splitterReplace_Num(text,numDelim,replacer,replacerRepeat){
-        var keepReplacing=true;
+    function splitterReplace_Num(text, numDelim, replacer, replacerRepeat) {
+        var keepReplacing = true;
         while (keepReplacing) {
             keepReplacing = false;
             for (var i = 100; i > 0; i--) {
                 if (text.indexOf(i + numDelim) != -1) keepReplacing = true;
-                text = text.replace(i + numDelim, "\n"+replacer.repeat(replacerRepeat));
+                text = text.replace(i + numDelim, "\n" + replacer.repeat(replacerRepeat));
             }
         }
         return text;
     }
-    function splitterProcess(userText,replacer, split1, split2, split3){
-        split1=splitter_detectNumbers(split1);
-        split2=splitter_detectNumbers(split2);
-        split3=splitter_detectNumbers(split3);
+    function splitterProcess_mult(userText, replacer, split1, split2) {
+        split1 = splitter_detectNumbers(split1);
+        split2 = splitter_detectNumbers(split2);
+
+        var numDelim = $('#numDelim').val();
+        var splitterCount = 0;
+        if (split2.length > 0 && split2[0] != "") {
+            splitterCount = 2;
+        } else if (split1.length > 0 && split1[0] != "") {
+            splitterCount = 1;
+        }
+        if (splitterCount < 2) {
+            return splitterProcess(userText, replacer, split1, split2);
+        }
+        if (split1.indexOf("NUM") != -1) {
+            userText = splitterReplace_Num(userText, numDelim, "⎠", 1);
+            split1.push("⎠");
+        } else if (split2.indexOf("NUM") != -1) {
+            userText = splitterReplace_Num(userText, numDelim, "⎠", 1);
+            split2.push("⎠");
+        }
+        while (true) {
+            var index1 = foundSplitter(userText, split1);
+            var index2 = foundSplitter(userText, split2);
+            if (index1 == -1 || index2 == -1) break;
+            if (index2 < index1) {
+                userText = userText.substr(0, index2) + bullet + userText.substr(index2 + 1);
+                continue;
+            }
+            // console.log("before: " + userText);
+            userText = userText.substr(0, index1) + quizletEndPage + userText.substr(index1 + 1);
+            index2 = foundSplitter(userText, split2);
+            userText = userText.substr(0, index2) + quizletHeader + userText.substr(index2 + 1);
+            // console.log("after: " + userText);
+        }
+        userText = splitterReplace(["⎠"], userText, "", 1);//flushing remaining whatever this thing is
+
+        return userText;
+        function foundSplitter(text, splitters) {
+            var lowestIndex = -1;
+            for (x in splitters) {
+                if (text.indexOf(splitters[x]) != -1) {
+                    lowestIndex = text.indexOf(splitters[x]);
+                }
+            }
+            return lowestIndex;
+        }
+    }
+    function splitterProcess(userText, replacer, split1, split2, split3) {
+        split1 = splitter_detectNumbers(split1);
+        split2 = splitter_detectNumbers(split2);
+        split3 = splitter_detectNumbers(split3);
 
         var numDelim = $('#numDelim').val();
         var splitterCount = 0;
@@ -766,28 +973,28 @@ $(function () {
             splitterCount = 1;
         }
         if (splitterCount > 2) {
-            userText=splitterReplace(split3,userText,replacer,3);
+            userText = splitterReplace(split3, userText, replacer, 3);
         }
         if (splitterCount > 2 && split3.indexOf("NUM") != -1) {
-            userText=splitterReplace_Num(userText,numDelim,replacer,3);
+            userText = splitterReplace_Num(userText, numDelim, replacer, 3);
         }
 
         if (splitterCount > 1) {
-            userText=splitterReplace(split2,userText,replacer,2);
+            userText = splitterReplace(split2, userText, replacer, 2);
         }
         if (splitterCount > 1 && split2.indexOf("NUM") != -1) {
-            userText=splitterReplace_Num(userText,numDelim,replacer,2);
+            userText = splitterReplace_Num(userText, numDelim, replacer, 2);
         }
 
         if (splitterCount > 0) {
-            userText=splitterReplace(split1,userText,replacer,1);
+            userText = splitterReplace(split1, userText, replacer, 1);
         }
         if (splitterCount > 0 && split1.indexOf("NUM") != -1) {
-            userText=splitterReplace_Num(userText,numDelim,replacer,1);
+            userText = splitterReplace_Num(userText, numDelim, replacer, 1);
         }
         return userText;
     }
-    
+
     //drag and drop
     var lastTarget = null;
 
@@ -837,7 +1044,7 @@ $(function () {
 
             $('#filename').text(fileName);
 
-            if(DEBUG)console.log('The file "' + fileName + '" has been selected.');
+            if (DEBUG) console.log('The file "' + fileName + '" has been selected.');
             showBanner({
                 'color': 'yellow',
                 'text': 'Detecting Bullet Points...',
@@ -847,4 +1054,23 @@ $(function () {
         }
     });
 });
+function occurrences(string, subString, allowOverlapping) {
+
+    string += "";
+    subString += "";
+    if (subString.length <= 0) return (string.length + 1);
+
+    var n = 0,
+        pos = 0,
+        step = allowOverlapping ? 1 : subString.length;
+
+    while (true) {
+        pos = string.indexOf(subString, pos);
+        if (pos >= 0) {
+            ++n;
+            pos += step;
+        } else break;
+    }
+    return n;
+}
 

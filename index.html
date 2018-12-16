@@ -103,7 +103,7 @@
 
       <br>
       <div style="display:none">
-          <button type="button" id="suggestedSplitterBtn" class="btn btn-info" data-toggle="tooltip" data-placement="right"
+        <button type="button" id="suggestedSplitterBtn" class="btn btn-info" data-toggle="tooltip" data-placement="right"
           title="leave empty to use these, click on one to remove, click this button to copy all bullet points">
           <span id="suggestedSplitterBtn_text">Suggested Bullet Points </span><span class="badge bg-dark" style="font-size:1em">&#9432;</span>
         </button>
@@ -129,14 +129,27 @@
       </div>
       <br></br>
       <div class="row container-fluid">
-        <div class="column3">
-
-          <input style="width:90%" class="form-control" placeholder="Bullet Points (1)" id="splitter1" type="text">
+        <div class="column">
+          <p>Highest bullet point</p>
         </div>
-        <div class="column3">
+        <div class="column">
+            <input style="width:90%" class="form-control" placeholder="Bullet Points (1)" id="splitter1" type="text">
+        </div>
+      </div>
+      <div class="row container-fluid">
+        <div class="column">
+            <p>Second bullet point</p>
+        </div>
+        <div class="column">
           <input style="width:90%" class="form-control" placeholder="Bullet Points (2)" id="splitter2" type="text">
         </div>
-        <div class="column3">
+      </div>
+      <div class="row container-fluid">
+        <div class="column">
+
+            <p>Third bullet point</p>
+        </div>
+        <div class="column">
           <input style="width:90%" class="form-control" placeholder="Bullet Points (3)" id="splitter3" type="text">
         </div>
       </div>
@@ -271,6 +284,11 @@
                 <div class="column"><span data-toggle="tooltip" data-placement="right" title="Trims words that aren't necessary (the, and, etc.)">
                     Trim Unnecessary Words<div style="display:inline-block;width:3%"></div></span></div>
                 <div class="column"><input name="bsswitch" type="checkbox" id="trimExtra" value="option1"></div>
+              </div>
+              <div class="row">
+                <div class="column"><span data-toggle="tooltip" data-placement="right" title="(somewhat buggy/wip) Creates multiple flashcards based on nested bullet points for each page. IMPORTANT: bullet points must be accurate, and in the correct boxes.">
+                    Multiple Flashcards per page<div style="display:inline-block;width:3%"></div></span></div>
+                <div class="column"><input name="bsswitch" type="checkbox" id="multipleFlashcards" value="option1"></div>
               </div>
               <div class="row">
                 <div class="column"><span data-toggle="tooltip" data-placement="right" title="Automatically tries to remove page numbers">
