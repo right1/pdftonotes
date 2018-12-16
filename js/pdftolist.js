@@ -14,6 +14,7 @@ const EXTRAWORDS = {
     ' the ': ' ',
     'The ': ''
 }
+const VALID_BULLETPOINTS = ['-', '>', '⦒','♞']
 const DEBUG = false;//print debug messages to console
 const quizletHeader = '^^^';//Quizlet delimiter after header
 const quizletEndPage = ';;;';//Quizlet delimiter after page
@@ -126,6 +127,19 @@ $(function () {
         startConversion();
     });
     //FUNCTIONS
+    function validateBullet() {
+        var split1 = trimWhitespace($('#splitter1').val().split(','));
+        var split2 = trimWhitespace($('#splitter2').val().split(','));
+        var split3 = trimWhitespace($('#splitter3').val().split(','));
+        if(split1.indexOf(bullet)!=-1||split2.indexOf(bullet)!=-1||split3.indexOf(bullet)!=-1){
+            if(VALID_BULLETPOINTS.indexOf(bullet)+1<VALID_BULLETPOINTS.length){
+                bullet=VALID_BULLETPOINTS[VALID_BULLETPOINTS.indexOf(bullet)+1];
+            }else{
+                bullet="";
+            }
+            
+        }
+    }
     function startConversion() {
         if (!userPDF || !userPDF.type || userPDF.type != "application/pdf") {
             console.error((userPDF && userPDF.name) ? userPDF.name + " is not a pdf file." : "No PDF file selected");
@@ -135,6 +149,7 @@ $(function () {
         hideQuizletBtn();
         hideHelpBtn();
         $('#result').text('Result is being loaded...');
+        if(quizletFormat)validateBullet();
         var finalText_array = [""];
         var fileReader = new FileReader();
         var pageStart = parseInt($('#pageStart').val());
@@ -361,8 +376,8 @@ $(function () {
         for (var i = 0; i < splitters.length; i++) {
             $('#splitter' + (i + 1)).val(splitters[i]);
         }
-        
-        if(splitters.length<2&&multipleFlashcards){
+
+        if (splitters.length < 2 && multipleFlashcards) {
             $('#multipleFlashcards').bootstrapSwitch('state', false);
         }
     }
