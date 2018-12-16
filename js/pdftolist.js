@@ -14,11 +14,81 @@ const EXTRAWORDS = {
     ' the ': ' ',
     'The ': ''
 }
-const VALID_BULLETPOINTS = ['-', '>', '⦒','♞']
+const VALID_BULLETPOINTS = ['-', '>', '⦒', '♞']
 const DEBUG = false;//print debug messages to console
 const quizletHeader = '^^^';//Quizlet delimiter after header
 const quizletEndPage = ';;;';//Quizlet delimiter after page
+
 $(function () {
+    class pdfFile {
+        constructor() {
+            this.PDF = false;
+            this.convertedText = "--";
+        }
+        setPDF(pdf_in) {
+            this.PDF = pdf_in;
+            return true;
+        }
+        convertPDF(ui) {
+            this.convertedText = startConversion(this.PDF, ui)
+            return this.convertedText;
+        }
+        getConvertedText() {
+            return this.convertedText;
+        }
+        getPDF_source() {
+            return this.PDF;
+        }
+        loadDetails(ui) {
+            detectSplitters(this.PDF, function (suggestedSplitters, badWords) {
+                if (!suggestedSplitters || !ui) {
+                    return;
+                }
+                console.log(suggestedSplitters);
+                // displayBestSplitters(foundSplitters,4,true,'#suggestedSplitter');
+                if (ui) {
+                    displaySuggestedSplitters(suggestedSplitters);
+                    hideBanner({//hiding detecting splitters banner
+                        'color': 'yellow',
+                        'time_hide': 250
+                    })
+                    var highestVal = badWords;
+                    if (!highestVal) {
+                        return suggestedSplitters;
+                    }
+                    if ($('#badWords').val() == "") {
+                        $('#badWords').val(highestVal);
+                    } else {
+                        $('#badWords').val($('#badWords').val() + ',' + highestVal);
+                    }
+                    showBanner({
+                        'color': 'red',
+                        'text': 'Added "' + highestVal + '" to exclusion list.',
+                        'time_show': 250,
+                        'time_hide': 250,
+                        'time_duration': 4000
+                    })
+                }
+                return suggestedSplitters;
+            });
+
+        }
+    }
+    class splitterStorage {
+        constructor(baseID, amount) {
+            this.baseID = baseID;
+            this.amount = amount;
+            this.splitters = [""];
+        }
+        update() {
+            for (var i = 1; i <= this.amount; i++) {
+                this.splitters[i] = trimWhitespace($(this.baseID + i).val().split(','));
+            }
+        }
+        get(index) {
+            return this.splitters[index];
+        }
+    }
     //HTML INITIAL SETUP
     $('[data-toggle="tooltip"]').tooltip();
     $("[name='bsswitch']").bootstrapSwitch();
@@ -27,13 +97,14 @@ $(function () {
     var badWords = [];
     var nastyWords = [];
     var pdfjsLib = window['pdfjs-dist/build/pdf'];
-    var suggestedSplitters = [];
+    // var suggestedSplitters = [];
     pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://mozilla.github.io/pdf.js/build/pdf.worker.js';
     var quizletFormat = false;
     var bullet = '\t';
-    var userPDF;
+    // var userPDF;
     var trimExtra = true;
-
+    var PDF = new pdfFile();
+    var splitters = new splitterStorage('#splitter', 3);
     var multipleFlashcards = true;
     setTimeout(function () {
         showBanner({
@@ -63,7 +134,7 @@ $(function () {
     });
     $('input[type="file"]').change(function (e) {
         var fileName = (e.target.files[0]) ? e.target.files[0].name : "Select file (or drag and drop)";
-        userPDF = e.target.files[0];
+        var userPDF = e.target.files[0];
         if (userPDF.type != "application/pdf") {
             console.error(userPDF.name, " is not a pdf file.")
             alert(userPDF.name + " is not a pdf file.");
@@ -71,14 +142,14 @@ $(function () {
         }
         $('#filename').text(fileName);
 
-
+        PDF.setPDF(userPDF);
         if (DEBUG) console.log('The file "' + fileName + '" has been selected.');
         showBanner({
             'color': 'yellow',
             'text': 'Detecting Bullet Points...',
             'time_show': 250
         })
-        detectSplitters();
+        PDF.loadDetails(true);
     });
     $('#btnOptions').click(function () {
         if ($('.options').css('display') == 'none') {
@@ -86,24 +157,6 @@ $(function () {
         } else {
             $('.options').hide();
         }
-    })
-    $('.suggestedSplitter').click(function (e) {
-        this.innerText = "";
-    });
-    $('#suggestedSplitterBtn').click(function () {
-        var tmp = $('#suggestedSplitterBtn_text').text();
-        $('#suggestedSplitterBtn_text').text('Copied the text: ' + suggestedSplitters.join('') + '\t');
-        setTimeout(function () {
-            $('#suggestedSplitterBtn_text').text(tmp);
-        }, 2500);
-        for (var i = 1; i <= suggestedSplitters.length; i++) {
-            $('#suggestedSplitter' + i).text(suggestedSplitters[i - 1]);
-        }
-        const textArea = document.createElement('textarea');
-        textArea.textContent = suggestedSplitters.join('');
-        document.body.append(textArea);
-        textArea.select();
-        document.execCommand("copy");
     })
     $('#btnCopy').click(function () {
         const copyText = document.getElementById("result").textContent;
@@ -119,37 +172,41 @@ $(function () {
         }, 2000);
     });
     $('#btnConvert').click(function () {
-        startConversion();
+        PDF.convertPDF(true);
     });
     $('#convertQuizlet').click(function () {
         $('#trimExtra').bootstrapSwitch('state', true);
         $('#quizletFormat').bootstrapSwitch('state', true);
-        startConversion();
+        PDF.convertPDF(true)
     });
+
     //FUNCTIONS
     function validateBullet() {
-        var split1 = trimWhitespace($('#splitter1').val().split(','));
-        var split2 = trimWhitespace($('#splitter2').val().split(','));
-        var split3 = trimWhitespace($('#splitter3').val().split(','));
-        if(split1.indexOf(bullet)!=-1||split2.indexOf(bullet)!=-1||split3.indexOf(bullet)!=-1){
-            if(VALID_BULLETPOINTS.indexOf(bullet)+1<VALID_BULLETPOINTS.length){
-                bullet=VALID_BULLETPOINTS[VALID_BULLETPOINTS.indexOf(bullet)+1];
-            }else{
-                bullet="";
+        var split1 = splitters.get(1);
+        var split2 = splitters.get(2);
+        var split3 = splitters.get(3);
+        if (split1.indexOf(bullet) != -1 || split2.indexOf(bullet) != -1 || split3.indexOf(bullet) != -1) {
+            if (VALID_BULLETPOINTS.indexOf(bullet) + 1 < VALID_BULLETPOINTS.length) {
+                bullet = VALID_BULLETPOINTS[VALID_BULLETPOINTS.indexOf(bullet) + 1];
+            } else {
+                bullet = "";
             }
-            
+
         }
     }
-    function startConversion() {
+    function startConversion(userPDF, ui) {
         if (!userPDF || !userPDF.type || userPDF.type != "application/pdf") {
             console.error((userPDF && userPDF.name) ? userPDF.name + " is not a pdf file." : "No PDF file selected");
             alert((userPDF && userPDF.name) ? userPDF.name + " is not a pdf file." : "No PDF file selected");
             return;
         }
-        hideQuizletBtn();
-        hideHelpBtn();
-        $('#result').text('Result is being loaded...');
-        if(quizletFormat)validateBullet();
+        splitters.update();
+        if (ui) {
+            hideQuizletBtn();
+            hideHelpBtn();
+            $('#result').text('Result is being loaded...');
+        }
+        if (quizletFormat) validateBullet();
         var finalText_array = [""];
         var fileReader = new FileReader();
         var pageStart = parseInt($('#pageStart').val());
@@ -187,13 +244,16 @@ $(function () {
                             // }
                             if (actuallyFull) {
                                 // console.log(finalText_array);
-                                updateResult(finalText_array.join('').replace(/EMPTYPAGE/g, ''));
+                                var endResult = finalText_array.join('').replace(/EMPTYPAGE/g, '')
+                                if (ui) updateResult(endResult);
+                                return endResult;
                             }
 
 
                         });
                     } catch (e) {
-                        console.log("Failed on getPageText: " + e)
+                        console.log("Failed on getPageText: " + e);
+                        return e;
                     }
                 }
             });
@@ -381,7 +441,7 @@ $(function () {
             $('#multipleFlashcards').bootstrapSwitch('state', false);
         }
     }
-    function detectSplitters() {
+    function detectSplitters(PDF, callback) {
         // var headerDelim = ($('#headerDelim').is(':checked')) ? true : false;
         var finalText_array = [];
         // var finalText = "";
@@ -394,6 +454,7 @@ $(function () {
         if (ignoreThreshold == NaN) ignoreThreshold = 0;
         badWords = trimWhitespace($('#badWords').val().split(','));
         nastyWords = trimWhitespace($('#nastyWords').val().split(','));
+        splitters.update();
         fileReader.onload = function () {
             var typedarray = new Uint8Array(this.result);
             pdfjsLib.getDocument(typedarray).then(function (pdf) {
@@ -417,29 +478,26 @@ $(function () {
                                 if (actuallyFull) {
                                     if (finalText_array.every(element => element === "EMPTYPAGE")) {
                                         alert("Couldn't detect any text in that file.");
+                                        return false;
                                     }
                                     if (DEBUG) console.log(detectedHeaders);
                                     var foundSplitters = {};
                                     foundSplitters = arrangeDetectedSplitters(foundSplitters, firstChars);
                                     foundSplitters = getBestSplitters(foundSplitters, 8);
-                                    suggestedSplitters = setSuggestedSplitters(foundSplitters);
-                                    displaySuggestedSplitters(suggestedSplitters);
-                                    // displayBestSplitters(foundSplitters,4,true,'#suggestedSplitter');
-                                    hideBanner({//hiding detecting splitters banner
-                                        'color': 'yellow',
-                                        'time_hide': 250
-                                    })
-                                    detectBadWords({ "pageCount": pageEnd - pageStart + 1, "detectedHeaders": detectedHeaders });
+                                    var suggestedSplitters = setSuggestedSplitters(foundSplitters);
+                                    var badWords = detectBadWords({ "pageCount": pageEnd - pageStart + 1, "detectedHeaders": detectedHeaders });
+                                    callback(suggestedSplitters, badWords);
                                 }
                             }
                         }, detectedHeaders);
                     } catch (e) {
-                        console.log("Failed on getPageText: " + e)
+                        console.log("Failed on getPageText: " + e);
+                        callback(false);
                     }
                 }
             });
         };
-        fileReader.readAsArrayBuffer(userPDF);
+        fileReader.readAsArrayBuffer(PDF);
     }
     function detectBadWords(params) {
         var pageCount = params['pageCount'] || 0;
@@ -453,19 +511,9 @@ $(function () {
             }
         });
         if (highestVal_value > pageCount / 12 && highestVal_value > 2 && highestVal.length > 2 && trimWhitespace($('#badWords').val().split(',')).indexOf(highestVal) == -1) {
-            if ($('#badWords').val() == "") {
-                $('#badWords').val(highestVal);
-            } else {
-                $('#badWords').val($('#badWords').val() + ',' + highestVal);
-            }
-            showBanner({
-                'color': 'red',
-                'text': 'Added "' + highestVal + '" to exclusion list.',
-                'time_show': 250,
-                'time_hide': 250,
-                'time_duration': 4000
-            })
+            return highestVal;
         }
+        return false;
     }
     function splitter_detectNumbers(splitters) {
         for (x in splitters) {
@@ -557,10 +605,11 @@ $(function () {
         }
     }
     function findBadWords(textItem, checkLength) {
-        var chk = (checkLength) ? checkLength : true;
+        if(badWords[0]=="")return false;
         for (var k = 0; k < badWords.length; k++) {
-            if (textItem.indexOf(badWords[k]) != -1 && (badWords[k].length >= textItem.length / 2 || !chk)) {
-                return badWords[0] !== "";
+            if (textItem.indexOf(badWords[k]) != -1 && (badWords[k].length >= textItem.length / 2 || !checkLength)) {
+                return true;
+
             }
         }
         return false;
@@ -571,9 +620,9 @@ $(function () {
         var headerDelim = ($('#headerDelim').is(':checked')) ? true : false;
         pdf.getPage(pageNumber).then(function (page) {
             page.getTextContent().then(function (textContent) {
-                var split1 = trimWhitespace($('#splitter1').val().split(','));
-                var split2 = trimWhitespace($('#splitter2').val().split(','));
-                var split3 = trimWhitespace($('#splitter3').val().split(','));
+                var split1 = splitters.get(1);
+                var split2 = splitters.get(2);
+                var split3 = splitters.get(3);
                 split1 = splitter_detectNumbers(split1);
                 split2 = splitter_detectNumbers(split2);
                 split3 = splitter_detectNumbers(split3);
@@ -613,7 +662,7 @@ $(function () {
                         continue;
                     } else {
                         var textItem = textContent.items[j].str;
-                        var remove = findBadWords(textItem);
+                        var remove = findBadWords(textItem,false);
                         if (remove) {
                             if (j == headerSemi) headerSemi++;
                         } else {
@@ -807,9 +856,9 @@ $(function () {
 
     function convertText(userText) {
         // var useSuggestedSplitters = false;
-        var split1 = trimWhitespace($('#splitter1').val().split(','));
-        var split2 = trimWhitespace($('#splitter2').val().split(','));
-        var split3 = trimWhitespace($('#splitter3').val().split(','));
+        var split1 = splitters.get(1);
+        var split2 = splitters.get(2);
+        var split3 = splitters.get(3);
         userText = splitterProcess(userText, bullet, split1, split2, split3);
         var userTextArray = userText.split('\n');
         var elementsToRemove = [];
@@ -974,13 +1023,13 @@ $(function () {
         document.getElementById('dropzone').style.opacity = 0;
         if (e.dataTransfer.files.length == 1) {
             var fileName = (e.dataTransfer.files[0]) ? e.dataTransfer.files[0].name : "Select file (or drag and drop)";
-            userPDF = e.dataTransfer.files[0];
+            var userPDF = e.dataTransfer.files[0];
             if (userPDF.type != "application/pdf") {
                 console.error(userPDF.name, "is not a pdf file.")
                 alert(userPDF.name + " is not a pdf file.");
                 return;
             }
-
+            PDF.setPDF(userPDF);
             $('#filename').text(fileName);
 
             if (DEBUG) console.log('The file "' + fileName + '" has been selected.');
@@ -989,7 +1038,7 @@ $(function () {
                 'text': 'Detecting Bullet Points...',
                 'time_show': 250
             })
-            detectSplitters();
+            PDF.loadDetails(true);
         }
     });
 });
