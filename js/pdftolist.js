@@ -278,12 +278,12 @@ $(function () {
             var splitterExists = false;
             $.each(foundSplitters, function (key, value) {
                 if (firstChars[x] == key) {
-                    foundSplitters[key] = value + 1;
+                    value['count'] = value['count'] + 1;
                     splitterExists = true;
                 }
             });
             if (!splitterExists) {
-                foundSplitters[firstChars[x]] = 1;
+                foundSplitters[firstChars[x]] = {count: 1,foundAt: x};
             }
         }
         return foundSplitters;
@@ -293,33 +293,33 @@ $(function () {
             var lowestVal;
             var lowestVal_value = Number.MAX_SAFE_INTEGER;
             $.each(foundSplitters, function (key, value) {
-                if (foundSplitters[key] < lowestVal_value) {
+                if (foundSplitters[key]['count'] < lowestVal_value) {
                     lowestVal = key;
-                    lowestVal_value = foundSplitters[key];
+                    lowestVal_value = foundSplitters[key]['count'];
                 }
             });
             delete foundSplitters[lowestVal];
         }
         return foundSplitters;
     }
-    function displayBestSplitters(foundSplitters,amountToDisplay,reset,resetID){
-        var splitterDisplayCount = 1;
-        //Resetting old splitters
-        if(reset){
-            for (var splitterResetCount = 1; splitterResetCount <= amountToDisplay; splitterResetCount++) {
-                $(resetID + splitterResetCount).text('');
-            }
-        }
+    
+    function setSuggestedSplitters(foundSplitters){
+        //sort them by foundAt
+        var splitters_with_foundAt=[];
+        var splitters_sorted=[];
         while (Object.keys(foundSplitters).length > 0) {
+            if(splitters_with_foundAt.length>=3)break;
             var highestVal;
             var highestVal_value = -1;
+            var highestVal_foundAt=-1;
             $.each(foundSplitters, function (key, value) {
-                if (foundSplitters[key] > highestVal_value) {
+                if (foundSplitters[key]['count'] > highestVal_value) {
                     highestVal = key;
-                    highestVal_value = foundSplitters[key];
+                    highestVal_value = foundSplitters[key]['count'];
+                    highestVal_foundAt=foundSplitters[key]['foundAt'];
                 }
             });
-            if (highestVal_value > 2 && splitterDisplayCount <= amountToDisplay &&highestVal!="") {
+            if (highestVal_value > 2 &&highestVal!="") {
                 var blacklisted=false;
                 for(var blk=0;blk<BLACKLIST.length;blk++){
                     if(highestVal.indexOf(BLACKLIST[blk])!=-1){
@@ -328,12 +328,31 @@ $(function () {
                     }
                 }
                 if(!blacklisted){
-                    $('#suggestedSplitter' + splitterDisplayCount).text(highestVal);
-                    splitterDisplayCount++;
-                    suggestedSplitters.push(highestVal);
+                    splitters_with_foundAt.push({"value": highestVal,"foundAt":highestVal_foundAt});
                 }
             }
             delete foundSplitters[highestVal];
+        }
+        while(splitters_with_foundAt.length>0){
+            var lowestFoundAt=splitters_with_foundAt[0]['foundAt'];
+            var bestIndex=0;
+            for(var i=1;i<splitters_with_foundAt.length;i++){
+                if(splitters_with_foundAt[i]['foundAt']<lowestFoundAt){
+                    lowestFoundAt=splitters_with_foundAt[i]['foundAt'];
+                    bestIndex=i;
+                }
+            }
+            splitters_sorted.push(splitters_with_foundAt[bestIndex]['value']);
+            splitters_with_foundAt.splice(bestIndex,1);
+        }
+        return splitters_sorted;
+    }
+    function displaySuggestedSplitters(splitters){
+        if($('#splitter1').val().length>1||$('#splitter2').val().length>1||$('#splitter3').val().length>1){
+            return;
+        }
+        for(var i=0;i<splitters.length;i++){
+            $('#splitter'+(i+1)).val(splitters[i]);
         }
     }
     function detectSplitters() {
@@ -377,8 +396,9 @@ $(function () {
                                     var foundSplitters = {};
                                     foundSplitters=arrangeDetectedSplitters(foundSplitters,firstChars);
                                     foundSplitters=getBestSplitters(foundSplitters,8);
-                                    suggestedSplitters=[];
-                                    displayBestSplitters(foundSplitters,4,true,'#suggestedSplitter');
+                                    suggestedSplitters=setSuggestedSplitters(foundSplitters);
+                                    displaySuggestedSplitters(suggestedSplitters);
+                                    // displayBestSplitters(foundSplitters,4,true,'#suggestedSplitter');
                                     hideBanner({//hiding detecting splitters banner
                                         'color': 'yellow',
                                         'time_hide': 250
@@ -398,7 +418,6 @@ $(function () {
     function detectBadWords(params){
         var pageCount=params['pageCount']||0;
         var detectedHeaders=params['detectedHeaders'];
-        console.log(detectedHeaders);
         var highestVal;
         var highestVal_value=1;
         $.each(detectedHeaders,function(key,value){
@@ -580,20 +599,20 @@ $(function () {
                                 numSearch=findProtectNumbers_result['numSearch'];
                             }
                             if(j<=headerSemi){
-                                var useSuggestedSplitters = false;
-                                if ((split1.length == 0 || (split1.length == 1 && split1[0] == '')) && (split2.length == 0 || (split2.length == 1 && split2[0] == '')) && (split3.length == 0 || (split3.length == 1 && split3[0] == ''))) {
-                                    useSuggestedSplitters = true;
-                                    split1 = [];
-                                    split2 = [];
-                                    split3 = [];
-                                    for (var index = 1; index <= 4;index++) {
-                                        if ($('#suggestedSplitter' + index).text().length > 0) {
-                                            if (index <= 2) split1.push($('#suggestedSplitter' +index).text());
-                                            else if (index == 3) split2.push($('#suggestedSplitter' +index).text());
-                                            else split3.push($('#suggestedSplitter' +index).text());
-                                        }
-                                    }
-                                }
+                                // var useSuggestedSplitters = false;
+                                // if ((split1.length == 0 || (split1.length == 1 && split1[0] == '')) && (split2.length == 0 || (split2.length == 1 && split2[0] == '')) && (split3.length == 0 || (split3.length == 1 && split3[0] == ''))) {
+                                //     useSuggestedSplitters = true;
+                                //     split1 = [];
+                                //     split2 = [];
+                                //     split3 = [];
+                                //     for (var index = 1; index <= 4;index++) {
+                                //         if ($('#suggestedSplitter' + index).text().length > 0) {
+                                //             if (index <= 2) split1.push($('#suggestedSplitter' +index).text());
+                                //             else if (index == 3) split2.push($('#suggestedSplitter' +index).text());
+                                //             else split3.push($('#suggestedSplitter' +index).text());
+                                //         }
+                                //     }
+                                // }
                                 finalText+=splitterProcess(textItem,"",split1,split2,split3);
                             }else{
                                 finalText += textItem;
@@ -675,26 +694,26 @@ $(function () {
         var split1 = trimWhitespace($('#splitter1').val().split(','));
         var split2 = trimWhitespace($('#splitter2').val().split(','));
         var split3 = trimWhitespace($('#splitter3').val().split(','));
-        if ((split1.length == 0 || (split1.length == 1 && split1[0] == '')) && (split2.length == 0 || (split2.length == 1 && split2[0] == '')) && (split3.length == 0 || (split3.length == 1 && split3[0] == ''))) {
-            // useSuggestedSplitters = true;
-            showBanner({
-                'color': 'yellow',
-                'text': 'No bullet points set. Used suggested bullet points.',
-                'time_show': 250,
-                'time_hide': 250,
-                'time_duration': 3000
-            })
-            split1 = [];
-            split2 = [];
-            split3 = [];
-            for (var i = 1; i <= 4; i++) {
-                if ($('#suggestedSplitter' + i).text().length > 0) {
-                    if (i <= 2) split1.push($('#suggestedSplitter' + i).text());
-                    else if (i == 3) split2.push($('#suggestedSplitter' + i).text());
-                    else split3.push($('#suggestedSplitter' + i).text());
-                }
-            }
-        }
+        // if ((split1.length == 0 || (split1.length == 1 && split1[0] == '')) && (split2.length == 0 || (split2.length == 1 && split2[0] == '')) && (split3.length == 0 || (split3.length == 1 && split3[0] == ''))) {
+        //     // useSuggestedSplitters = true;
+        //     showBanner({
+        //         'color': 'yellow',
+        //         'text': 'No bullet points set. Used suggested bullet points.',
+        //         'time_show': 250,
+        //         'time_hide': 250,
+        //         'time_duration': 3000
+        //     })
+        //     split1 = [];
+        //     split2 = [];
+        //     split3 = [];
+        //     for (var i = 1; i <= 4; i++) {
+        //         if ($('#suggestedSplitter' + i).text().length > 0) {
+        //             if (i <= 2) split1.push($('#suggestedSplitter' + i).text());
+        //             else if (i == 3) split2.push($('#suggestedSplitter' + i).text());
+        //             else split3.push($('#suggestedSplitter' + i).text());
+        //         }
+        //     }
+        // }
         userText=splitterProcess(userText,bullet,split1,split2,split3);
         var userTextArray = userText.split('\n');
         var elementsToRemove = [];
