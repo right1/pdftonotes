@@ -38,7 +38,19 @@
       /* a nice fade effect, visibility toggles after 175ms, opacity will animate for 175ms. note display:none cannot be animated.  */
       transition: visibility 175ms, opacity 175ms;
     }
-
+    @media screen and (orientation:portrait){
+      .floatingBanner{
+        right:0;
+      }
+    }
+    @media screen and (orientation:landscape){
+      .floatingBanner{
+        z-index:2;
+        position:absolute;
+        right:1em;
+        top: 1em;
+      }
+    }
     .column {
       width: 50%
     }
@@ -51,7 +63,7 @@
 </head>
 
 <body>
-
+  
   <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
     <div class="container">
       <a class="navbar-brand" href="#">
@@ -76,19 +88,22 @@
           </li>
         </ul>
       </div>
-      <div id="blueBanner" style="display:none" class="alert alert-primary" role="alert">
-        <span id="bannerText_blue">Open the Options Menu for better results. Now added quizlet support.</span>
-      </div>
-      <div id="yellowBanner" style="display:none" class="alert alert-warning" role="alert">
-        <span id="bannerText_yellow">No splitters set. Used suggested splitters.</span>
-      </div>
-      <div id="redBanner" style="display:none" class="alert alert-danger" role="alert">
-        <span id="bannerText_red"></span>
-      </div>
-    </div>
 
+    </div>
+    <div class="floatingBanner">
+        <div id="blueBanner" style="display:none" class="alert alert-primary" role="alert">
+          <span id="bannerText_blue">Open the Options Menu for better results. Now added quizlet support.</span>
+        </div>
+        <div id="yellowBanner" style="display:none" class="alert alert-warning" role="alert">
+          <span id="bannerText_yellow">No splitters set. Used suggested splitters.</span>
+        </div>
+        <div id="redBanner" style="display:none" class="alert alert-danger" role="alert">
+          <span id="bannerText_red"></span>
+        </div>
+      </div>
   </nav>
   <div class="container">
+
     <div style="visibility:hidden; opacity:0" id="dropzone" class="dropzone"></div>
     <div>
       <div style="height:1rem"></div>
