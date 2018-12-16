@@ -361,6 +361,10 @@ $(function () {
         for (var i = 0; i < splitters.length; i++) {
             $('#splitter' + (i + 1)).val(splitters[i]);
         }
+        
+        if(splitters.length<2&&multipleFlashcards){
+            $('#multipleFlashcards').bootstrapSwitch('state', false);
+        }
     }
     function detectSplitters() {
         // var headerDelim = ($('#headerDelim').is(':checked')) ? true : false;
