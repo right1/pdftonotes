@@ -57,7 +57,7 @@ $(function () {
         trimExtra = state;
     });
     $('#multipleFlashcards').on('switchChange.bootstrapSwitch', function (event, state) {
-        multipleFlashcards= state;
+        multipleFlashcards = state;
     });
     $('input[type="file"]').change(function (e) {
         var fileName = (e.target.files[0]) ? e.target.files[0].name : "Click to select file (or drag and drop)";
@@ -158,14 +158,14 @@ $(function () {
                             result = (trimExtra) ? trimExtraWords(result) : result;
                             finalText_array[index] = (quizletFormat) ? result + quizletEndPage : result;
                             var actuallyFull = true;
-                            for (var j = pageStart; j <=pageEnd; j++) {
+                            for (var j = pageStart; j <= pageEnd; j++) {
                                 if (finalText_array[j] == null) {
                                     actuallyFull = false;
                                     break;
                                 }
                             }
                             // if (finalText_array.length - 1 === pageEnd) {
-                                
+
                             // } else {
                             //     actuallyFull = false;
                             // }
@@ -584,224 +584,146 @@ $(function () {
                 } else if (split1.length > 0 && split1[0] != "") {
                     splitterCount = 1;
                 }
-                if (!multipleFlashcards || splitterCount < 2 || true) {
-                    var pageText = "";
-                    for (var j = excludeStart; j < textContent.items.length - excludeEnd; j++) {
-                        var detectNumber = textContent.items[j].str.replace(/ /g, "");
-                        var parsedInt = parseInt(detectNumber);
-                        if ($('#pageNumberDetection').is(':checked') && detectNumber.indexOf('.') == -1 && parsedInt == pageNumber && detectNumber.length < 3) {
+                var pageText = "";
+                for (var j = excludeStart; j < textContent.items.length - excludeEnd; j++) {
+                    var detectNumber = textContent.items[j].str.replace(/ /g, "");
+                    var parsedInt = parseInt(detectNumber);
+                    if ($('#pageNumberDetection').is(':checked') && detectNumber.indexOf('.') == -1 && parsedInt == pageNumber && detectNumber.length < 3) {
+                        if (j == headerSemi) headerSemi++;
+                        continue;
+                    } else {
+                        var textItem = textContent.items[j].str;
+                        var remove = findBadWords(textItem);
+                        if (remove) {
                             if (j == headerSemi) headerSemi++;
-                            continue;
                         } else {
-                            var textItem = textContent.items[j].str;
-                            var remove = findBadWords(textItem);
-                            if (remove) {
-                                if (j == headerSemi) headerSemi++;
-                            } else {
-                                if (textItem == ' ') {
-                                    addTab = false;
-                                }
-                                if ($('#addNewLine').is(':checked') && (textItem.length > 150 || textContent.items[j].height > 10)) {
-                                    finalText += '\n';
-                                    addTab = true;
-                                } else if (headerDelim && addTab && textItem != ' ') {
-                                    finalText += '\t'
-                                    addTab = false;
-                                }
-                                if ((split3.indexOf('NUM') != -1 || split2.indexOf('NUM') != -1 || split1.indexOf('NUM') != -1) && textItem.length > 3) {
-                                    var findProtectNumbers_result = findProtectNumbers(textItem, numSearch);
-                                    textItem = findProtectNumbers_result['text'];
-                                    numSearch = findProtectNumbers_result['numSearch'];
-                                }
-                                if (j <= headerSemi) {
-                                    if (multipleFlashcards && quizletFormat) {
-                                        pageText += textItem;
-                                        // finalText += splitterProcess_mult(textItem, quizletEndPage, split1, split2);
-                                        // finalText+=quizletHeader;
-                                    } else {
-                                        finalText += splitterProcess(textItem, "", split1, split2, split3);
-                                    }
+                            if (textItem == ' ') {
+                                addTab = false;
+                            }
+                            if ($('#addNewLine').is(':checked') && (textItem.length > 150 || textContent.items[j].height > 10)) {
+                                finalText += '\n';
+                                addTab = true;
+                            } else if (headerDelim && addTab && textItem != ' ') {
+                                finalText += '\t'
+                                addTab = false;
+                            }
+                            if ((split3.indexOf('NUM') != -1 || split2.indexOf('NUM') != -1 || split1.indexOf('NUM') != -1) && textItem.length > 3) {
+                                var findProtectNumbers_result = findProtectNumbers(textItem, numSearch);
+                                textItem = findProtectNumbers_result['text'];
+                                numSearch = findProtectNumbers_result['numSearch'];
+                            }
+                            if (j <= headerSemi) {
+                                if (multipleFlashcards && quizletFormat) {
+                                    pageText += textItem;
+                                    // finalText += splitterProcess_mult(textItem, quizletEndPage, split1, split2);
+                                    // finalText+=quizletHeader;
                                 } else {
-                                    if (multipleFlashcards && quizletFormat) {
-                                        pageText += textItem;
-                                        // finalText+=quizletHeader;
-                                    } else {
-                                        finalText += textItem;
-                                    }
-
+                                    finalText += splitterProcess(textItem, "", split1, split2, split3);
                                 }
-                            }
-                        }
-                        if (j == headerSemi && quizletFormat && !multipleFlashcards) {
-                            finalText += quizletHeader;
-                        }else if(j == headerSemi && quizletFormat){
-                            // pageText+=quizletHeader;
-                        }
-                    }
-                    // console.log(pageText);
-                    if (pageText != "") {
-                        finalText += splitterProcess_mult(pageText, "", split1, split2);
-                    }
-                } else {
-                    var pageText = "";
-                    for (var j = excludeStart; j < textContent.items.length - excludeEnd; j++) {
-                        var detectNumber = textContent.items[j].str.replace(/ /g, "");
-                        var parsedInt = parseInt(detectNumber);
-                        if ($('#pageNumberDetection').is(':checked') && detectNumber.indexOf('.') == -1 && parsedInt == pageNumber && detectNumber.length < 3) {
-                            if (j == headerSemi) headerSemi++;
-                            continue;
-                        } else {
-                            var textItem = textContent.items[j].str;
-                            var remove = findBadWords(textItem);
-                            if (remove) {
-                                if (j == headerSemi) headerSemi++;
                             } else {
-                                if (textItem == ' ') {
-                                    addTab = false;
+                                if (multipleFlashcards && quizletFormat) {
+                                    pageText += textItem;
+                                    // finalText+=quizletHeader;
+                                } else {
+                                    finalText += textItem;
                                 }
-                                if ($('#addNewLine').is(':checked') && (textItem.length > 150 || textContent.items[j].height > 10)) {
-                                    finalText += '\n';
-                                    addTab = true;
-                                } else if (headerDelim && addTab && textItem != ' ') {
-                                    finalText += '\t'
-                                    addTab = false;
-                                }
-                                if ((split3.indexOf('NUM') != -1 || split2.indexOf('NUM') != -1 || split1.indexOf('NUM') != -1) && textItem.length > 3) {
-                                    var findProtectNumbers_result = findProtectNumbers(textItem, numSearch);
-                                    textItem = findProtectNumbers_result['text'];
-                                    numSearch = findProtectNumbers_result['numSearch'];
-                                }
-                                pageText += splitterProcess(textItem, "", split1, [], [])
+
                             }
                         }
-                        // if (j == headerSemi && quizletFormat) {
-                        //     finalText += quizletHeader;
-                        // }
                     }
-                    finalText += pageText;
+                    if (j == headerSemi && quizletFormat && !multipleFlashcards) {
+                        finalText += quizletHeader;
+                    }
+                }
+                // console.log(pageText);
+                if (pageText != "") {
+                    finalText += splitterProcess_mult(pageText, "", split1, split2);
                 }
                 finalText = finalText.replace(/ACTUAL;;NUM/g, '');
-                if(multipleFlashcards && quizletFormat){
-                    finalText=validate(finalText,split1);
+                if (multipleFlashcards && quizletFormat) {
+                    finalText = validate(finalText, split1);
                 }
                 (ignored) ? callback('EMPTYPAGE', pageNumber, firstChars, detectedHeaders) : callback(finalText, pageNumber, firstChars, detectedHeaders);
             })
         });
     }
-    function validate(text,split1){
-        var slides=text.split(quizletEndPage);
-        if(slides.length==0)return text;
-        var title="";
-        if(slides.length==1){
+    function validate(text, split1) {
+        var slides = text.split(quizletEndPage);
+        if (slides.length == 0) return text;
+        var title = "";
+        if (slides.length == 1) {
             //replace first bullet point and return
-            var lowestIndex=-1;
-            for(var i=0;i<split1.length;i++){
-                if(text.indexOf(split1[i])!=-1){
-                    lowestIndex=text.indexOf(split1[i]);
+            var lowestIndex = -1;
+            for (var i = 0; i < split1.length; i++) {
+                if (text.indexOf(split1[i]) != -1) {
+                    lowestIndex = text.indexOf(split1[i]);
                 }
             }
-            if(lowestIndex==-1){
+            if (lowestIndex == -1) {
                 return text;
-            }else{
-                return text.substr(0,lowestIndex)+quizletHeader+text.substr(lowestIndex+1,text.length);
+            } else {
+                return text.substr(0, lowestIndex) + quizletHeader + text.substr(lowestIndex + 1, text.length);
             }
         }
-        if(slides[0].indexOf(quizletHeader)==-1){
-            title=slides[0];
-            title+=": "
+        if (slides[0].indexOf(quizletHeader) == -1) {
+            title = slides[0];
+            title += ": "
             slides.shift();
         }
-        var madeTitleSlide=-1;
-        for(x in slides){
-            
-            while(occurrences(slides[x],quizletHeader)>1){
-                if(slides[x].indexOf(quizletHeader)<3){
-                    slides[x]=slides[x].replace(quizletHeader,"\n");
-                }else{
-                    slides[x]=replaceLastInstance(quizletHeader,slides[x],"\n");
+        var madeTitleSlide = -1;
+        for (x in slides) {
+
+            while (occurrences(slides[x], quizletHeader) > 1) {
+                if (slides[x].indexOf(quizletHeader) < 3) {
+                    slides[x] = slides[x].replace(quizletHeader, "\n");
+                } else {
+                    slides[x] = replaceLastInstance(quizletHeader, slides[x], "\n");
                 }
             }
-            if(slides[x].indexOf(quizletHeader)==-1&&madeTitleSlide==-1){
-                slides[x]=title+quizletHeader+slides[x];
-                madeTitleSlide=x;
+            if (slides[x].indexOf(quizletHeader) == -1 && madeTitleSlide == -1) {
+                slides[x] = title + quizletHeader + slides[x];
+                madeTitleSlide = x;
                 console.log("title slide made");
                 // console.log(slides);
-            }else if(slides[x].indexOf(quizletHeader)>3){
-                slides[x]=title+slides[x];
+            } else if (slides[x].indexOf(quizletHeader) > 3) {
+                slides[x] = title + slides[x];
             }
-            if(slides[x].split(quizletHeader)[0].length>50){
-                if(madeTitleSlide>-1){
+            if (slides[x].split(quizletHeader)[0].length > 50) {
+                if (madeTitleSlide > -1) {
                     console.log("detected long title, but title slide exists");
-                }else{
-                    madeTitleSlide=x;
-                    slides[x]=slides[x].replace(title,"");
-                    slides[x]=slides[x].replace(quizletHeader,"");
-                    slides[x]=title+quizletHeader+slides[x];
+                } else {
+                    madeTitleSlide = x;
+                    slides[x] = slides[x].replace(title, "");
+                    slides[x] = slides[x].replace(quizletHeader, "");
+                    slides[x] = title + quizletHeader + slides[x];
                 }
             }
         }
-        for(x in slides){
-            if(slides[x].indexOf(quizletHeader)<3){
-                slides[madeTitleSlide]+='\n';
-                slides[madeTitleSlide]+=slides[x];
+        for (x in slides) {
+            if (slides[x].indexOf(quizletHeader) < 3) {
+                slides[madeTitleSlide] += '\n';
+                slides[madeTitleSlide] += slides[x];
             }
         }
-        for(x in slides){
-            if(slides[x].indexOf(quizletHeader)<3){
-                slides.splice(x,1);
+        for (x in slides) {
+            if (slides[x].indexOf(quizletHeader) < 3) {
+                slides.splice(x, 1);
             }
         }
-        while(occurrences(slides[x],quizletHeader)>1){
-            slides[x]=replaceLastInstance(quizletHeader,slides[x],'\n');
+        while (occurrences(slides[x], quizletHeader) > 1) {
+            slides[x] = replaceLastInstance(quizletHeader, slides[x], '\n');
         }
         // console.log(slides);
         return slides.join(quizletEndPage);
         function replaceLastInstance(badtext, str, replacer) {
-            if(!replacer)replacer="";
+            if (!replacer) replacer = "";
             var charpos = str.lastIndexOf(badtext);
-            if (charpos<0) return str;
-            ptone = str.substring(0,charpos);
-            pttwo = str.substring(charpos+(badtext.length));
-            return (ptone+replacer+pttwo);
+            if (charpos < 0) return str;
+            ptone = str.substring(0, charpos);
+            pttwo = str.substring(charpos + (badtext.length));
+            return (ptone + replacer + pttwo);
         }
     }
-    // function processFullPage(text, split1, split2, split3) {
-    //     split1 = splitter_detectNumbers(split1);
-    //     split2 = splitter_detectNumbers(split2);
-    //     split3 = splitter_detectNumbers(split3);
-    //     //only process split1, split2 -> split3 handled after
-    //     var numDelim = $('#numDelim').val();
-    //     while(foundSplitter(text,split1))
-    //     if (splitterCount > 2) {
-    //         userText = splitterReplace(split3, userText, replacer, 3);
-    //     }
-    //     if (splitterCount > 2 && split3.indexOf("NUM") != -1) {
-    //         userText = splitterReplace_Num(userText, numDelim, replacer, 3);
-    //     }
-
-    //     if (splitterCount > 1) {
-    //         userText = splitterReplace(split2, userText, replacer, 2);
-    //     }
-    //     if (splitterCount > 1 && split2.indexOf("NUM") != -1) {
-    //         userText = splitterReplace_Num(userText, numDelim, replacer, 2);
-    //     }
-
-    //     if (splitterCount > 0) {
-    //         userText = splitterReplace(split1, userText, replacer, 1);
-    //     }
-    //     if (splitterCount > 0 && split1.indexOf("NUM") != -1) {
-    //         userText = splitterReplace_Num(userText, numDelim, replacer, 1);
-    //     }
-    //     return userText;
-    //     function foundSplitter(text,splitters){
-    //         for(x in splitters){
-    //             if(text.indexOf(splitters[x])!=-1){
-    //                 return true;
-    //             }
-    //         }
-    //         return false;
-    //     }
-    // }
     function updateDetectedHeaders(textItemArray, detectedHeaders) {
         if (textItemArray[0]) {//First Element
             if (detectedHeaders[textItemArray[0].str]) {
@@ -868,26 +790,6 @@ $(function () {
         var split1 = trimWhitespace($('#splitter1').val().split(','));
         var split2 = trimWhitespace($('#splitter2').val().split(','));
         var split3 = trimWhitespace($('#splitter3').val().split(','));
-        // if ((split1.length == 0 || (split1.length == 1 && split1[0] == '')) && (split2.length == 0 || (split2.length == 1 && split2[0] == '')) && (split3.length == 0 || (split3.length == 1 && split3[0] == ''))) {
-        //     // useSuggestedSplitters = true;
-        //     showBanner({
-        //         'color': 'yellow',
-        //         'text': 'No bullet points set. Used suggested bullet points.',
-        //         'time_show': 250,
-        //         'time_hide': 250,
-        //         'time_duration': 3000
-        //     })
-        //     split1 = [];
-        //     split2 = [];
-        //     split3 = [];
-        //     for (var i = 1; i <= 4; i++) {
-        //         if ($('#suggestedSplitter' + i).text().length > 0) {
-        //             if (i <= 2) split1.push($('#suggestedSplitter' + i).text());
-        //             else if (i == 3) split2.push($('#suggestedSplitter' + i).text());
-        //             else split3.push($('#suggestedSplitter' + i).text());
-        //         }
-        //     }
-        // }
         userText = splitterProcess(userText, bullet, split1, split2, split3);
         var userTextArray = userText.split('\n');
         var elementsToRemove = [];
@@ -939,7 +841,7 @@ $(function () {
             splitterCount = 1;
         }
         if (splitterCount < 2) {
-            return splitterProcess(userText, replacer, split1, split2,[]);
+            return splitterProcess(userText, replacer, split1, split2, []);
         }
         if (split1.indexOf("NUM") != -1) {
             userText = splitterReplace_Num(userText, numDelim, "⎠", 1);
@@ -953,7 +855,7 @@ $(function () {
             var index2 = foundSplitter(userText, split2);
             if (index1 == -1 || index2 == -1) break;
             if (index2 < index1) {
-                userText = userText.substr(0, index2) + '\n'+bullet + userText.substr(index2 + 1);
+                userText = userText.substr(0, index2) + '\n' + bullet + userText.substr(index2 + 1);
                 continue;
             }
             // console.log("before: " + userText);
