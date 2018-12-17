@@ -1118,7 +1118,7 @@ function join_ignoreEmpty(arr,joiner){
 function removeFC(index){
     quizletFlashcards.deleteCard(index);
     console.log('removed '+index);
-    $('#flashcard'+index).hide();
+    $('#flashcard'+index).hide('100');
 }
 function occurrences(string, subString, allowOverlapping) {
 
