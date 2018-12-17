@@ -23,6 +23,7 @@ var isVisible=false;
 class flashCards{
     constructor(){
         this.cardsToDelete=[];
+        this.elementsToChange=[];
     }
     setText(text){
         this.rawText=text;
@@ -33,6 +34,12 @@ class flashCards{
         this.rawText=join_ignoreEmpty(this.cards,quizletEndPage);
         this.cardsToDelete=[];
         return this.rawText;
+    }
+    getElementsToChange(){
+        return this.elementsToChange;
+    }
+    setElementsToChange(e){
+        this.elementsToChange=e;
     }
     getCards(){
         return this.cards;
@@ -45,6 +52,9 @@ class flashCards{
     }
     deleteCard(index){
         this.cards[index]="";
+    }
+    numCards(){
+        return this.cards.length;
     }
 }
 var quizletFlashcards=new flashCards();
@@ -195,6 +205,11 @@ $(function () {
         }
     })
     $('#btnCopy').click(function () {
+        
+        if(isVisible){
+            updateFC(-1);
+            showAsFlashcards(quizletFlashcards);
+        }
         const copyText = (quizletFormat)?quizletFlashcards.getText():PDF.getConvertedText();
         var textArea = document.createElement('textarea');
         textArea.classList.add('invis');
@@ -1117,10 +1132,26 @@ function removeFC(index){
     console.log('removed '+index);
     $('#flashcard'+index).hide('100');
 }
+function updateElementsToChange(value){
+    var index=parseInt(value.id.replace('flashcard-A','').replace('flashcard-B',''));
+    var elems=quizletFlashcards.getElementsToChange();
+    if(elems.indexOf(index)==-1){
+        elems.push(index);
+    }
+    quizletFlashcards.setElementsToChange(elems);
+}
 function updateFC(index){
-    
-    var card=$('#flashcard-A'+index).val()+quizletHeader+$('#flashcard-B'+index).val();
-    quizletFlashcards.setCard(index,card);
+    var elems=quizletFlashcards.getElementsToChange();
+    if(index!=-1&& elems.indexOf(index)==-1){
+        elems.push(index);
+    }
+    for(var i=0;i<elems.length;i++){
+        var card=$('#flashcard-A'+elems[i]).val()+quizletHeader+$('#flashcard-B'+elems[i]).val();
+        if(card!=quizletFlashcards.getCard(elems[i])){
+            quizletFlashcards.setCard(elems[i],card);
+        }
+    }
+    quizletFlashcards.setElementsToChange([]);
     showAsFlashcards(quizletFlashcards);
 }
 function showAsFlashcards(fc){
@@ -1130,14 +1161,14 @@ function showAsFlashcards(fc){
         if(cards[i].length<4)continue;//will get handled by quizlet
         var card_split=cards[i].split(quizletHeader)
         var btnHTML="<div class='t-center mt-1'><button onclick=removeFC(this.value) class='btn btn-danger flashcard-btn mr-1' value='"+i+"'>Remove</button><button onclick=updateFC(this.value) class='btn btn-success flashcard-btn ml-1 card-textarea' value='"+i+"'>Update</button></div>"
-        var cardHTML_left="<div class='card-header'><textarea class='form-control rounded-0 card-textarea' id='flashcard-A"+i+"'>";
+        var cardHTML_left="<div class='card-header'><textarea class='form-control rounded-0 card-textarea' onchange=updateElementsToChange(this) id='flashcard-A"+i+"'>";
         // cardHTML_left+=btnHTML;
         cardHTML_left+=card_split[0];
         cardHTML_left+="</textarea><span class='card-static'>";
         cardHTML_left+=card_split[0];
         cardHTML_left+="</span></div>";
         card_split.shift();
-        var cardHTML_right="<div class='card-body'><textarea class='form-control rounded-0 card-textarea' id='flashcard-B"+i+"'>";
+        var cardHTML_right="<div class='card-body'><textarea class='form-control rounded-0 card-textarea' onchange=updateElementsToChange(this) id='flashcard-B"+i+"'>";
         cardHTML_right+=(card_split.length>0)?card_split.join(" "):"-";
         cardHTML_right+="</textarea><span class='card-static'>"
         cardHTML_right+=(card_split.length>0)?card_split.join(" "):"-";
