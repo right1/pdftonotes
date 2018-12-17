@@ -18,6 +18,33 @@ const VALID_BULLETPOINTS = ['-', '>', '⦒', '♞']
 const DEBUG = false;//print debug messages to console
 const quizletHeader = '^^^';//Quizlet delimiter after header
 const quizletEndPage = ';;;';//Quizlet delimiter after page
+class flashCards{
+    constructor(){
+        this.cardsToDelete=[];
+    }
+    setText(text){
+        this.rawText=text;
+        this.cards=text.split(quizletEndPage);
+    }
+    getText(){
+        this.cardsToDelete.sort().reverse();
+        for(var i=0;i<this.cardsToDelete.length;i++){
+            this.cards[this.cardsToDelete[i]]="";
+        }
+        this.rawText=join_ignoreEmpty(this.cards,quizletEndPage);
+        this.cardsToDelete=[];
+        return this.rawText;
+    }
+    getCards(){
+        return this.cards;
+    }
+    deleteCard(index){
+        if(this.cardsToDelete.indexOf(index)==-1){
+            this.cardsToDelete.push(index);
+        }
+    }
+}
+var quizletFlashcards=new flashCards();
 
 $(function () {
     class pdfFile {
@@ -74,6 +101,7 @@ $(function () {
 
         }
     }
+    
     class splitterStorage {
         constructor(baseID, amount) {
             this.baseID = baseID;
@@ -115,6 +143,8 @@ $(function () {
         });
     }, 1500);
     $('#multipleFlashcards').bootstrapSwitch('state', true);
+    // $('#quizletFormat').bootstrapSwitch('state', true);
+    // $('#trimExtra').bootstrapSwitch('state', true);
     //HTML ONCHANGE EVENTS
     $('#quizletFormat').on('switchChange.bootstrapSwitch', function (event, state) {
         quizletFormat = state;
@@ -159,7 +189,7 @@ $(function () {
         }
     })
     $('#btnCopy').click(function () {
-        const copyText = document.getElementById("result").textContent;
+        const copyText = (quizletFormat)?quizletFlashcards.getText():PDF.getConvertedText();
         const textArea = document.createElement('textarea');
         textArea.textContent = copyText;
         document.body.append(textArea);
@@ -179,7 +209,6 @@ $(function () {
         $('#quizletFormat').bootstrapSwitch('state', true);
         PDF.convertPDF(true)
     });
-
     //FUNCTIONS
     function validateBullet() {
         var split1 = splitters.get(1);
@@ -848,12 +877,43 @@ $(function () {
             "numSearch": numSearch
         }
     }
+    
     function updateResult(text) {
         var convertedText = convertText(text);
-        $('#result').text(convertedText);
-        (quizletFormat) ? showQuizletBtn() : showHelpBtn();
+        
+        if(quizletFormat){
+            $('#result').hide();
+            $('#flashCards').show();
+            quizletFlashcards.setText(convertedText);
+            showAsFlashcards(quizletFlashcards);
+            showQuizletBtn();
+        }else{
+            $('#result').show();
+            $('#flashCards').hide();
+            $('#result').text(convertedText);
+            showHelpBtn();
+        }
     }
-
+    function showAsFlashcards(fc){
+        var cards=fc.getCards();
+        $('#flashCards').html('');
+        for(var i=0;i<cards.length;i++){
+            var card_split=cards[i].split(quizletHeader)
+            var btnHTML="<button onclick=removeFC(this.value) class='btn btn-danger flashcard-btn mt-1' value='"+i+"'>Remove</button>"
+            var cardHTML_left="<div class='card-header'>";
+            // cardHTML_left+=btnHTML;
+            cardHTML_left+=card_split[0];
+            cardHTML_left+="</div>";
+            card_split.shift();
+            var cardHTML_right="<div class='card-body'><div class='card-text'>";
+            cardHTML_right+=(card_split.length>0)?card_split.join(" "):"-";
+            cardHTML_right+="</div>"
+            cardHTML_right+=btnHTML;
+            cardHTML_right+="</div>";
+            var panelType=(i%2==0)?("card bg-light mb-3"):("card bg-dark text-white mb-3")
+            $('#flashCards').html($('#flashCards').html()+"<div id='flashcard"+i+"' class='"+panelType+"'>"+cardHTML_left+cardHTML_right+"</div>")
+        }
+    }
     function convertText(userText) {
         // var useSuggestedSplitters = false;
         var split1 = splitters.get(1);
@@ -1042,6 +1102,23 @@ $(function () {
         }
     });
 });
+function join_ignoreEmpty(arr,joiner){
+    var text="";
+    for(var i=0;i<arr.length;i++){
+        if(arr[i]!=""&&i!=(arr.length-1)){
+            text+=arr[i];
+            text+=joiner;
+        }else{
+            text+=arr[i];
+        }
+    }
+    return text;
+}
+function removeFC(index){
+    quizletFlashcards.deleteCard(index);
+    console.log('removed '+index);
+    $('#flashcard'+index).hide();
+}
 function occurrences(string, subString, allowOverlapping) {
 
     string += "";
