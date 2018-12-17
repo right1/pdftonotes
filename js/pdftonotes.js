@@ -1,6 +1,6 @@
 //Elements to exclude from splitter detection
 const BLACKLIST = ['/', '\u200b', '\t', '\n', ',', "'", "-", String.fromCharCode(160), String.fromCharCode(8239),
-    ':', '≠', '"', '(', ')', '”', ';', '.', ';', '=', 'Δ', 'ε', 'δ', 'α', 'x', 'β', 'π', 'ρ', 'φ', ' ', 'μ', '×'];
+    ':', '≠', '"', '(', ')', '”', ';', '.', ';', '=', 'Δ', 'ε', 'δ', 'α', 'x', 'β', 'π', 'ρ', 'φ', ' ', 'μ', '×','⋅'];
 //Dictionary of extra words to trim
 const EXTRAWORDS = {
     'This is the ': '',
@@ -1163,6 +1163,7 @@ function showAsFlashcards(fc){
         var btnHTML="<div class='t-center mt-1'><button onclick=removeFC(this.value) class='btn btn-danger flashcard-btn mr-1' value='"+i+"'>Remove</button><button onclick=updateFC(this.value) class='btn btn-success flashcard-btn ml-1 card-textarea' value='"+i+"'>Update</button></div>"
         var cardHTML_left="<div class='card-header'><textarea class='form-control rounded-0 card-textarea' onchange=updateElementsToChange(this) id='flashcard-A"+i+"'>";
         // cardHTML_left+=btnHTML;
+        if(card_split[0].indexOf('\n')<1)card_split[0]=card_split[0].replace('\n','');//getting rid of extra newlines from previous replacement
         cardHTML_left+=card_split[0];
         cardHTML_left+="</textarea><span class='card-static'>";
         cardHTML_left+=card_split[0];
