@@ -63,17 +63,21 @@ $(function () {
     class pdfFile {
         constructor() {
             this.PDF = false;
-            this.convertedText = "--";
         }
         setPDF(pdf_in) {
             this.PDF = pdf_in;
             return true;
         }
         convertPDF(ui) {
-            this.convertedText = startConversion(this.PDF, ui)
-            return this.convertedText;
+            startConversion(this.PDF, ui,function(txt){
+                pdfFile.prototype.updateText(txt);
+            });
+        }
+        updateText(txt){
+            this.convertedText=txt;
         }
         getConvertedText() {
+            console.log(this.convertedText);
             return this.convertedText;
         }
         getPDF_source() {
@@ -214,13 +218,15 @@ $(function () {
         var textArea = document.createElement('textarea');
         textArea.classList.add('invis');
         textArea.textContent = copyText;
-        document.body.append(textArea);
+        $('#copyArea').append(textArea);
+        // document.body.append(textArea);
         textArea.select();
         document.execCommand("copy");
         $('#btnCopy').text("Copied to clipboard");
 
         setTimeout(function () {
             $('#btnCopy').text("Copy to clipboard");
+            $('.invis').remove();
         }, 2000);
     });
     $('#btnConvert').click(function () {
@@ -255,7 +261,7 @@ $(function () {
 
         }
     }
-    function startConversion(userPDF, ui) {
+    function startConversion(userPDF, ui,callback) {
         if (!userPDF || !userPDF.type || userPDF.type != "application/pdf") {
             console.error((userPDF && userPDF.name) ? userPDF.name + " is not a pdf file." : "No PDF file selected");
             alert((userPDF && userPDF.name) ? userPDF.name + " is not a pdf file." : "No PDF file selected");
@@ -307,7 +313,7 @@ $(function () {
                                 // console.log(finalText_array);
                                 var endResult = finalText_array.join('').replace(/EMPTYPAGE/g, '')
                                 if (ui) updateResult(endResult);
-                                return endResult;
+                                callback(endResult);
                             }
 
 
