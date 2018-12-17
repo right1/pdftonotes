@@ -16,11 +16,11 @@
   <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-switch/3.3.4/css/bootstrap3/bootstrap-switch.min.css"
     rel="stylesheet">
   <style>
-    textarea {
+    
+    .invis {
       position: absolute;
       left: -100%;
     }
-
     div.dropzone {
       /* positions to point 0,0 - required for z-index */
       position: fixed;
@@ -63,6 +63,9 @@
     .column3 {
       width: 33%
     }
+    /* .card-textarea{
+      visibility:hidden;
+    } */
   </style>
 
 </head>
@@ -108,7 +111,7 @@
       </div>
   </nav>
   <div class="container">
-
+    <!-- <button id="test" class="btn">click</button> -->
     <div style="visibility:hidden; opacity:0" id="dropzone" class="dropzone"></div>
     <div>
       <div style="height:1rem"></div>
@@ -152,15 +155,18 @@
 
       <div style="display:inline-block;height:5vh"></div>
       <!-- HOWTO BUTTONS -->
-      <label class="btn btn-info" style="display:none" id="quizletInfoBtn" data-toggle="modal" data-target="#quizletInfo">
+      <button class="btn btn-info quizletHelp" style="display:none" id="quizletInfoBtn" data-toggle="modal" data-target="#quizletInfo">
         How to use?
-      </label>
-      <label class="btn btn-success help" style="display:none" id="helpBtn" data-toggle="modal" data-target="#help">
+      </button>
+      <button class="btn btn-success help" style="display:none" id="helpBtn" data-toggle="modal" data-target="#help">
         How to use?
-      </label>
-      <label class="btn btn-dark help" style="display:none;background-color:darkblue" id="convertQuizlet">
+      </button>
+      <button class="btn btn-dark help" style="display:none;background-color:darkblue" id="convertQuizlet">
         Convert in Quizlet Format
-      </label>
+      </button>
+      <button class="btn btn-success quizletHelp" style="display:none" id="editElements">
+        Edit elements
+      </button>
       <hr>
       </hr>
       <div id="flashCards"></div>

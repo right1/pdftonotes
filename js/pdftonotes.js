@@ -18,6 +18,8 @@ const VALID_BULLETPOINTS = ['-', '>', '⦒', '♞']
 const DEBUG = false;//print debug messages to console
 const quizletHeader = '^^^';//Quizlet delimiter after header
 const quizletEndPage = ';;;';//Quizlet delimiter after page
+
+var isVisible=false;
 class flashCards{
     constructor(){
         this.cardsToDelete=[];
@@ -28,9 +30,6 @@ class flashCards{
     }
     getText(){
         this.cardsToDelete.sort().reverse();
-        for(var i=0;i<this.cardsToDelete.length;i++){
-            this.cards[this.cardsToDelete[i]]="";
-        }
         this.rawText=join_ignoreEmpty(this.cards,quizletEndPage);
         this.cardsToDelete=[];
         return this.rawText;
@@ -38,10 +37,14 @@ class flashCards{
     getCards(){
         return this.cards;
     }
+    getCard(index){
+        return this.cards[index];
+    }
+    setCard(index,card){
+        this.cards[index]=card;
+    }
     deleteCard(index){
-        if(this.cardsToDelete.indexOf(index)==-1){
-            this.cardsToDelete.push(index);
-        }
+        this.cards[index]="";
     }
 }
 var quizletFlashcards=new flashCards();
@@ -121,7 +124,10 @@ $(function () {
     $('[data-toggle="tooltip"]').tooltip();
     $("[name='bsswitch']").bootstrapSwitch();
     $('.options').hide();
-
+    // $('#test').click(function(){
+    //     $('#4head').val(Math.random());
+    //     $('#5head').val(Math.random());
+    // })
     var badWords = [];
     var nastyWords = [];
     var pdfjsLib = window['pdfjs-dist/build/pdf'];
@@ -190,7 +196,8 @@ $(function () {
     })
     $('#btnCopy').click(function () {
         const copyText = (quizletFormat)?quizletFlashcards.getText():PDF.getConvertedText();
-        const textArea = document.createElement('textarea');
+        var textArea = document.createElement('textarea');
+        textArea.classList.add('invis');
         textArea.textContent = copyText;
         document.body.append(textArea);
         textArea.select();
@@ -208,6 +215,16 @@ $(function () {
         $('#trimExtra').bootstrapSwitch('state', true);
         $('#quizletFormat').bootstrapSwitch('state', true);
         PDF.convertPDF(true)
+    });
+    $('#editElements').click(function(){
+        isVisible=!isVisible;
+        if(isVisible){
+            $('.card-textarea').show();
+            $('.card-static').hide();
+        }else{
+            $('.card-textarea').hide();
+            $('.card-static').show();
+        }
     });
     //FUNCTIONS
     function validateBullet() {
@@ -323,7 +340,7 @@ $(function () {
     }
     function showQuizletBtn() {
         setTimeout(function () {
-            $('#quizletInfoBtn').show(100);
+            $('.quizletHelp').show(100);
         }, 100);
     }
     function showHelpBtn() {
@@ -333,7 +350,7 @@ $(function () {
     }
     function hideQuizletBtn() {
         setTimeout(function () {
-            $('#quizletInfoBtn').hide(100);
+            $('.quizletHelp').hide(100);
         }, 100);
     }
     function hideHelpBtn() {
@@ -894,27 +911,7 @@ $(function () {
             showHelpBtn();
         }
     }
-    function showAsFlashcards(fc){
-        var cards=fc.getCards();
-        $('#flashCards').html('');
-        for(var i=0;i<cards.length;i++){
-            if(cards[i].length<4)continue;//will get handled by quizlet
-            var card_split=cards[i].split(quizletHeader)
-            var btnHTML="<div class='t-center mt-1'><button onclick=removeFC(this.value) class='btn btn-danger flashcard-btn' value='"+i+"'>Remove</button></div>"
-            var cardHTML_left="<div class='card-header'>";
-            // cardHTML_left+=btnHTML;
-            cardHTML_left+=card_split[0];
-            cardHTML_left+="</div>";
-            card_split.shift();
-            var cardHTML_right="<div class='card-body'><div class='card-text'>";
-            cardHTML_right+=(card_split.length>0)?card_split.join(" "):"-";
-            cardHTML_right+="</div>"
-            cardHTML_right+=btnHTML;
-            cardHTML_right+="</div>";
-            var panelType=(i%2==0)?("card bg-light mb-3"):("card bg-dark text-white mb-3")
-            $('#flashCards').html($('#flashCards').html()+"<div id='flashcard"+i+"' class='"+panelType+"'>"+cardHTML_left+cardHTML_right+"</div>")
-        }
-    }
+    
     function convertText(userText) {
         // var useSuggestedSplitters = false;
         var split1 = splitters.get(1);
@@ -1119,6 +1116,39 @@ function removeFC(index){
     quizletFlashcards.deleteCard(index);
     console.log('removed '+index);
     $('#flashcard'+index).hide('100');
+}
+function updateFC(index){
+    
+    var card=$('#flashcard-A'+index).val()+quizletHeader+$('#flashcard-B'+index).val();
+    quizletFlashcards.setCard(index,card);
+    showAsFlashcards(quizletFlashcards);
+}
+function showAsFlashcards(fc){
+    var cards=fc.getCards();
+    $('#flashCards').html('');
+    for(var i=0;i<cards.length;i++){
+        if(cards[i].length<4)continue;//will get handled by quizlet
+        var card_split=cards[i].split(quizletHeader)
+        var btnHTML="<div class='t-center mt-1'><button onclick=removeFC(this.value) class='btn btn-danger flashcard-btn mr-1' value='"+i+"'>Remove</button><button onclick=updateFC(this.value) class='btn btn-success flashcard-btn ml-1' value='"+i+"'>Update</button></div>"
+        var cardHTML_left="<div class='card-header'><textarea class='form-control rounded-0 card-textarea' id='flashcard-A"+i+"'>";
+        // cardHTML_left+=btnHTML;
+        cardHTML_left+=card_split[0];
+        cardHTML_left+="</textarea><span class='card-static'>";
+        cardHTML_left+=card_split[0];
+        cardHTML_left+="</span></div>";
+        card_split.shift();
+        var cardHTML_right="<div class='card-body'><textarea class='form-control rounded-0 card-textarea' id='flashcard-B"+i+"'>";
+        cardHTML_right+=(card_split.length>0)?card_split.join(" "):"-";
+        cardHTML_right+="</textarea><span class='card-static'>"
+        cardHTML_right+=(card_split.length>0)?card_split.join(" "):"-";
+        cardHTML_right+="</span>"
+        cardHTML_right+=btnHTML;
+        cardHTML_right+="</div>";
+        var panelType=(i%2==0)?("card bg-light mb-3"):("card bg-dark text-white mb-3")
+        $('#flashCards').html($('#flashCards').html()+"<div id='flashcard"+i+"' class='"+panelType+"'>"+cardHTML_left+cardHTML_right+"</div>")
+    }
+    $('.card-textarea').hide();
+    isVisible=false;
 }
 function occurrences(string, subString, allowOverlapping) {
 
