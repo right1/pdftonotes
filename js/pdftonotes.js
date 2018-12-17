@@ -1129,7 +1129,7 @@ function showAsFlashcards(fc){
     for(var i=0;i<cards.length;i++){
         if(cards[i].length<4)continue;//will get handled by quizlet
         var card_split=cards[i].split(quizletHeader)
-        var btnHTML="<div class='t-center mt-1'><button onclick=removeFC(this.value) class='btn btn-danger flashcard-btn mr-1' value='"+i+"'>Remove</button><button onclick=updateFC(this.value) class='btn btn-success flashcard-btn ml-1' value='"+i+"'>Update</button></div>"
+        var btnHTML="<div class='t-center mt-1'><button onclick=removeFC(this.value) class='btn btn-danger flashcard-btn mr-1' value='"+i+"'>Remove</button><button onclick=updateFC(this.value) class='btn btn-success flashcard-btn ml-1 card-textarea' value='"+i+"'>Update</button></div>"
         var cardHTML_left="<div class='card-header'><textarea class='form-control rounded-0 card-textarea' id='flashcard-A"+i+"'>";
         // cardHTML_left+=btnHTML;
         cardHTML_left+=card_split[0];
