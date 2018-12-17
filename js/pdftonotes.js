@@ -898,8 +898,9 @@ $(function () {
         var cards=fc.getCards();
         $('#flashCards').html('');
         for(var i=0;i<cards.length;i++){
+            if(cards[i].length<4)continue;//will get handled by quizlet
             var card_split=cards[i].split(quizletHeader)
-            var btnHTML="<button onclick=removeFC(this.value) class='btn btn-danger flashcard-btn mt-1' value='"+i+"'>Remove</button>"
+            var btnHTML="<div class='t-center mt-1'><button onclick=removeFC(this.value) class='btn btn-danger flashcard-btn' value='"+i+"'>Remove</button></div>"
             var cardHTML_left="<div class='card-header'>";
             // cardHTML_left+=btnHTML;
             cardHTML_left+=card_split[0];
