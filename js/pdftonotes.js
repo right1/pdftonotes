@@ -19,7 +19,8 @@ const DEBUG = false;//print debug messages to console
 const quizletHeader = '^^^';//Quizlet delimiter after header
 const quizletEndPage = ';;;';//Quizlet delimiter after page
 
-var isVisible=false;
+let protectNested=true;//protects nested elements with the same bullet point
+let fcViewIsVisible=false;
 class flashCards{
     constructor(){
         this.cardsToDelete=[];
@@ -57,7 +58,7 @@ class flashCards{
         return this.cards.length;
     }
 }
-var quizletFlashcards=new flashCards();
+let quizletFlashcards=new flashCards();
 
 $(function () {
     class pdfFile {
@@ -96,7 +97,7 @@ $(function () {
                         'color': 'yellow',
                         'time_hide': 250
                     })
-                    var highestVal = badWords;
+                    let highestVal = badWords;
                     if (!highestVal) {
                         return suggestedSplitters;
                     }
@@ -124,14 +125,31 @@ $(function () {
             this.baseID = baseID;
             this.amount = amount;
             this.splitters = [""];
+            this.heights=[];
         }
         update() {
-            for (var i = 1; i <= this.amount; i++) {
+            for (let i = 1; i <= this.amount; i++) {
                 this.splitters[i] = trimWhitespace($(this.baseID + i).val().split(','));
+                this.heights[i]=[];
             }
         }
         get(index) {
             return this.splitters[index];
+        }
+        setSplitterHeight(splitNo, index, height){
+            this.heights[splitNo][index]=height;
+        }
+        getSplitterHeight(splitNo, index){
+            return this.heights[splitNo][index];
+        }
+        splitterHeightExists(splitNo,index){
+            if(this.heights[splitNo][index])return true;
+            return false;
+        }
+        flushHeights(){
+            for(let i=1;i<this.amount;i++){
+                this.heights[i]=[];
+            }
         }
     }
     //HTML INITIAL SETUP
@@ -142,18 +160,18 @@ $(function () {
     //     $('#4head').val(Math.random());
     //     $('#5head').val(Math.random());
     // })
-    var badWords = [];
-    var nastyWords = [];
-    var pdfjsLib = window['pdfjs-dist/build/pdf'];
-    // var suggestedSplitters = [];
+    let badWords = [];
+    let nastyWords = [];
+    let pdfjsLib = window['pdfjs-dist/build/pdf'];
+    // let suggestedSplitters = [];
     pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://mozilla.github.io/pdf.js/build/pdf.worker.js';
-    var quizletFormat = false;
-    var bullet = '\t';
-    // var userPDF;
-    var trimExtra = true;
-    var PDF = new pdfFile();
-    var splitters = new splitterStorage('#splitter', 3);
-    var multipleFlashcards = true;
+    let quizletFormat = false;
+    let bullet = '\t';
+    // let userPDF;
+    let trimExtra = true;
+    let PDF = new pdfFile();
+    let splitters = new splitterStorage('#splitter', 3);
+    let multipleFlashcards = true;
     setTimeout(function () {
         showBanner({
             'color': 'blue',
@@ -183,8 +201,8 @@ $(function () {
         multipleFlashcards = state;
     });
     $('input[type="file"]').change(function (e) {
-        var fileName = (e.target.files[0]) ? e.target.files[0].name : "Select file (or drag and drop)";
-        var userPDF = e.target.files[0];
+        let fileName = (e.target.files[0]) ? e.target.files[0].name : "Select file (or drag and drop)";
+        let userPDF = e.target.files[0];
         if (userPDF.type != "application/pdf") {
             console.error(userPDF.name, " is not a pdf file.")
             alert(userPDF.name + " is not a pdf file.");
@@ -210,12 +228,12 @@ $(function () {
     })
     $('#btnCopy').click(function () {
         
-        if(isVisible){
+        if(fcViewIsVisible){
             updateFC(-1);
             showAsFlashcards(quizletFlashcards);
         }
         const copyText = (quizletFormat)?quizletFlashcards.getText():PDF.getConvertedText();
-        var textArea = document.createElement('textarea');
+        let textArea = document.createElement('textarea');
         textArea.classList.add('invis');
         textArea.textContent = copyText;
         $('#copyArea').append(textArea);
@@ -238,8 +256,8 @@ $(function () {
         PDF.convertPDF(true)
     });
     $('#editElements').click(function(){
-        isVisible=!isVisible;
-        if(isVisible){
+        fcViewIsVisible=!fcViewIsVisible;
+        if(fcViewIsVisible){
             $('.card-textarea').show();
             $('.card-static').hide();
         }else{
@@ -249,9 +267,9 @@ $(function () {
     });
     //FUNCTIONS
     function validateBullet() {
-        var split1 = splitters.get(1);
-        var split2 = splitters.get(2);
-        var split3 = splitters.get(3);
+        let split1 = splitters.get(1);
+        let split2 = splitters.get(2);
+        let split3 = splitters.get(3);
         if (split1.indexOf(bullet) != -1 || split2.indexOf(bullet) != -1 || split3.indexOf(bullet) != -1) {
             if (VALID_BULLETPOINTS.indexOf(bullet) + 1 < VALID_BULLETPOINTS.length) {
                 bullet = VALID_BULLETPOINTS[VALID_BULLETPOINTS.indexOf(bullet) + 1];
@@ -274,31 +292,31 @@ $(function () {
             $('#result').text('Result is being loaded...');
         }
         if (quizletFormat) validateBullet();
-        var finalText_array = [""];
-        var fileReader = new FileReader();
-        var pageStart = parseInt($('#pageStart').val());
-        var pageEnd = parseInt($('#pageEnd').val());
-        var excludeStart = parseInt($('#excludeStart').val());
-        var excludeEnd = parseInt($('#excludeEnd').val());
-        var ignoreThreshold = parseInt($('#ignoreThreshold').val());
+        let finalText_array = [""];
+        let fileReader = new FileReader();
+        let pageStart = parseInt($('#pageStart').val());
+        let pageEnd = parseInt($('#pageEnd').val());
+        let excludeStart = parseInt($('#excludeStart').val());
+        let excludeEnd = parseInt($('#excludeEnd').val());
+        let ignoreThreshold = parseInt($('#ignoreThreshold').val());
         if (ignoreThreshold == NaN) ignoreThreshold = 0;
         badWords = trimWhitespace($('#badWords').val().split(','));
         nastyWords = trimWhitespace($('#nastyWords').val().split(','));
         fileReader.onload = function () {
-            var typedarray = new Uint8Array(this.result);
+            let typedarray = new Uint8Array(this.result);
             pdfjsLib.getDocument(typedarray).then(function (pdf) {
                 if (isNaN(pageEnd) || pageEnd == 0) pageEnd = pdf.numPages;
                 if (isNaN(pageStart) || pageStart == 0) pageStart = 1;
                 if (isNaN(excludeEnd)) excludeEnd = 0;
                 if (isNaN(excludeStart)) excludeStart = 0;
-                var count = pageStart;
-                for (var i = pageStart; i <= pageEnd; i++) {
+                let count = pageStart;
+                for (let i = pageStart; i <= pageEnd; i++) {
                     try {
                         getPageText(pdf, i, excludeStart, excludeEnd, ignoreThreshold, function (result, index) {
                             result = (trimExtra) ? trimExtraWords(result) : result;
                             finalText_array[index] = (quizletFormat) ? result + quizletEndPage : result;
-                            var actuallyFull = true;
-                            for (var j = pageStart; j <= pageEnd; j++) {
+                            let actuallyFull = true;
+                            for (let j = pageStart; j <= pageEnd; j++) {
                                 if (finalText_array[j] == null) {
                                     actuallyFull = false;
                                     break;
@@ -311,7 +329,7 @@ $(function () {
                             // }
                             if (actuallyFull) {
                                 // console.log(finalText_array);
-                                var endResult = finalText_array.join('').replace(/EMPTYPAGE/g, '')
+                                let endResult = finalText_array.join('').replace(/EMPTYPAGE/g, '')
                                 if (ui) updateResult(endResult);
                                 callback(endResult);
                             }
@@ -335,11 +353,11 @@ $(function () {
     //time_hide: hide animation duration (default: 0)
     //time_duration: time to show banner (ms) (default: don't hide)
     function showBanner(params) {
-        var bannerColor = params['color'] || 'blue';
-        var text = params['text'] || false;
-        var t_show = params['time_show'] || 0;
-        var t_hide = params['time_hide'] || 0;
-        var duration = params['time_duration'] || false;
+        let bannerColor = params['color'] || 'blue';
+        let text = params['text'] || false;
+        let t_show = params['time_show'] || 0;
+        let t_hide = params['time_hide'] || 0;
+        let duration = params['time_duration'] || false;
         if (text) {
             $('#bannerText_' + bannerColor).text(text);
         }
@@ -355,8 +373,8 @@ $(function () {
     //color: red, blue, yellow (default: blue)
     //time_hide: hide animation duration (default: 0)
     function hideBanner(params) {
-        var bannerColor = params['color'] || 'blue';
-        var t_hide = params['time_hide'] || 0;
+        let bannerColor = params['color'] || 'blue';
+        let t_hide = params['time_hide'] || 0;
         $('#' + bannerColor + 'Banner').hide(t_hide);
     }
     function showQuizletBtn() {
@@ -380,7 +398,7 @@ $(function () {
         }, 100);
     }
     function trimExtraWords(text) {
-        var keepReplacing = true;
+        let keepReplacing = true;
         while (keepReplacing) {
             keepReplacing = false;
             $.each(EXTRAWORDS, function (key, value) {
@@ -424,7 +442,7 @@ $(function () {
             }
         }
         for (x in firstChars) {
-            var splitterExists = false;
+            let splitterExists = false;
             $.each(foundSplitters, function (key, value) {
                 if (firstChars[x] == key) {
                     value['count'] = value['count'] + 1;
@@ -439,8 +457,8 @@ $(function () {
     }
     function getBestSplitters(foundSplitters, amount) {
         while (Object.keys(foundSplitters).length >= amount) {
-            var lowestVal;
-            var lowestVal_value = Number.MAX_SAFE_INTEGER;
+            let lowestVal;
+            let lowestVal_value = Number.MAX_SAFE_INTEGER;
             $.each(foundSplitters, function (key, value) {
                 if (foundSplitters[key]['count'] < lowestVal_value) {
                     lowestVal = key;
@@ -454,13 +472,13 @@ $(function () {
 
     function setSuggestedSplitters(foundSplitters) {
         //sort them by foundAt
-        var splitters_with_foundAt = [];
-        var splitters_sorted = [];
+        let splitters_with_foundAt = [];
+        let splitters_sorted = [];
         while (Object.keys(foundSplitters).length > 0) {
             if (splitters_with_foundAt.length >= 3) break;
-            var highestVal;
-            var highestVal_value = -1;
-            var highestVal_foundAt = -1;
+            let highestVal;
+            let highestVal_value = -1;
+            let highestVal_foundAt = -1;
             $.each(foundSplitters, function (key, value) {
                 if (foundSplitters[key]['count'] > highestVal_value) {
                     highestVal = key;
@@ -469,8 +487,8 @@ $(function () {
                 }
             });
             if (highestVal_value > 2 && highestVal != "") {
-                var blacklisted = false;
-                for (var blk = 0; blk < BLACKLIST.length; blk++) {
+                let blacklisted = false;
+                for (let blk = 0; blk < BLACKLIST.length; blk++) {
                     if (highestVal.indexOf(BLACKLIST[blk]) != -1) {
                         blacklisted = true;
                         break;
@@ -483,9 +501,9 @@ $(function () {
             delete foundSplitters[highestVal];
         }
         while (splitters_with_foundAt.length > 0) {
-            var lowestFoundAt = splitters_with_foundAt[0]['foundAt'];
-            var bestIndex = 0;
-            for (var i = 1; i < splitters_with_foundAt.length; i++) {
+            let lowestFoundAt = splitters_with_foundAt[0]['foundAt'];
+            let bestIndex = 0;
+            for (let i = 1; i < splitters_with_foundAt.length; i++) {
                 if (splitters_with_foundAt[i]['foundAt'] < lowestFoundAt) {
                     lowestFoundAt = splitters_with_foundAt[i]['foundAt'];
                     bestIndex = i;
@@ -500,7 +518,7 @@ $(function () {
         if ($('#splitter1').val().length > 1 || $('#splitter2').val().length > 1 || $('#splitter3').val().length > 1) {
             return;
         }
-        for (var i = 0; i < splitters.length; i++) {
+        for (let i = 0; i < splitters.length; i++) {
             $('#splitter' + (i + 1)).val(splitters[i]);
         }
 
@@ -509,34 +527,34 @@ $(function () {
         }
     }
     function detectSplitters(PDF, callback) {
-        // var headerDelim = ($('#headerDelim').is(':checked')) ? true : false;
-        var finalText_array = [];
-        // var finalText = "";
-        var fileReader = new FileReader();
-        var pageStart = parseInt($('#pageStart').val());
-        var pageEnd = parseInt($('#pageEnd').val());
-        var excludeStart = parseInt($('#excludeStart').val());
-        var excludeEnd = parseInt($('#excludeEnd').val());
-        var ignoreThreshold = parseInt($('#ignoreThreshold').val());
+        // let headerDelim = ($('#headerDelim').is(':checked')) ? true : false;
+        let finalText_array = [];
+        // let finalText = "";
+        let fileReader = new FileReader();
+        let pageStart = parseInt($('#pageStart').val());
+        let pageEnd = parseInt($('#pageEnd').val());
+        let excludeStart = parseInt($('#excludeStart').val());
+        let excludeEnd = parseInt($('#excludeEnd').val());
+        let ignoreThreshold = parseInt($('#ignoreThreshold').val());
         if (ignoreThreshold == NaN) ignoreThreshold = 0;
         badWords = trimWhitespace($('#badWords').val().split(','));
         nastyWords = trimWhitespace($('#nastyWords').val().split(','));
         splitters.update();
         fileReader.onload = function () {
-            var typedarray = new Uint8Array(this.result);
+            let typedarray = new Uint8Array(this.result);
             pdfjsLib.getDocument(typedarray).then(function (pdf) {
-                var detectedHeaders = {};
+                let detectedHeaders = {};
                 if (isNaN(pageEnd) || pageEnd == 0) pageEnd = pdf.numPages;
                 if (isNaN(pageStart) || pageStart == 0) pageStart = 1;
                 if (isNaN(excludeEnd)) excludeEnd = 0;
                 if (isNaN(excludeStart)) excludeStart = 0;
-                for (var i = pageStart; i <= pageEnd; i++) {
+                for (let i = pageStart; i <= pageEnd; i++) {
                     try {
                         getPageText(pdf, i, excludeStart, excludeEnd, ignoreThreshold, function (result, index, firstChars, detectedHeaders) {
                             finalText_array[index] = result;
                             if (finalText_array.length - 1 === pageEnd && finalText_array.every(element => element !== null)) {
-                                var actuallyFull = true;
-                                for (var j = pageStart; j < finalText_array.length; j++) {
+                                let actuallyFull = true;
+                                for (let j = pageStart; j < finalText_array.length; j++) {
                                     if (finalText_array[j] == null) {
                                         actuallyFull = false;
                                         break;
@@ -548,11 +566,11 @@ $(function () {
                                         return false;
                                     }
                                     if (DEBUG) console.log(detectedHeaders);
-                                    var foundSplitters = {};
+                                    let foundSplitters = {};
                                     foundSplitters = arrangeDetectedSplitters(foundSplitters, firstChars);
                                     foundSplitters = getBestSplitters(foundSplitters, 8);
-                                    var suggestedSplitters = setSuggestedSplitters(foundSplitters);
-                                    var badWords = detectBadWords({ "pageCount": pageEnd - pageStart + 1, "detectedHeaders": detectedHeaders });
+                                    let suggestedSplitters = setSuggestedSplitters(foundSplitters);
+                                    let badWords = detectBadWords({ "pageCount": pageEnd - pageStart + 1, "detectedHeaders": detectedHeaders });
                                     callback(suggestedSplitters, badWords);
                                 }
                             }
@@ -567,10 +585,10 @@ $(function () {
         fileReader.readAsArrayBuffer(PDF);
     }
     function detectBadWords(params) {
-        var pageCount = params['pageCount'] || 0;
-        var detectedHeaders = params['detectedHeaders'];
-        var highestVal;
-        var highestVal_value = 1;
+        let pageCount = params['pageCount'] || 0;
+        let detectedHeaders = params['detectedHeaders'];
+        let highestVal;
+        let highestVal_value = 1;
         $.each(detectedHeaders, function (key, value) {
             if (value > highestVal_value && key.length > 2) {
                 highestVal = key;
@@ -591,12 +609,12 @@ $(function () {
         return splitters;
     }
     function detectHeader(textContent, headerSemi) {
-        var textContent_ini = textContent;
+        let textContent_ini = textContent;
         if (headerSemi == -1) headerSemi = 0;
         try {
-            var max_Height = textContent.items[0].height;
-            var max_index = 0;
-            for (var i = 0; i < textContent.items.length; i++) {
+            let max_Height = textContent.items[0].height;
+            let max_index = 0;
+            for (let i = 0; i < textContent.items.length; i++) {
                 if (textContent.items[i].height > max_Height) {
                     max_Height = textContent.items[i].height;
                     max_index = i;
@@ -605,23 +623,23 @@ $(function () {
             if (textContent.items[headerSemi].height == max_Height) {
                 //header at beginning
 
-                var num = headerSemi;
+                let num = headerSemi;
                 while (textContent.items[num].height == textContent.items[headerSemi].height) {
                     num++;
                 }
                 headerSemi = num;
             } else if (textContent.items[textContent.items.length - 1].height == max_Height) {
                 //header at end
-                var lastElement = textContent.items.pop();
+                let lastElement = textContent.items.pop();
                 textContent.items.unshift(lastElement);
                 if (DEBUG) console.log("shifted " + i);
             }
             //If its bad word
-            var skipOver = findBadWords(textContent.items[headerSemi].str, false);
+            let skipOver = findBadWords(textContent.items[headerSemi].str, false);
             if (DEBUG && skipOver) console.log("found bad word");
-            var detectNumber = textContent.items[headerSemi].str.replace(/ /g, "");
-            var parsedInt = parseInt(detectNumber);
-            for (var i = 0; i < 100; i++) {
+            let detectNumber = textContent.items[headerSemi].str.replace(/ /g, "");
+            let parsedInt = parseInt(detectNumber);
+            for (let i = 0; i < 100; i++) {
                 if ($('#pageNumberDetection').is(':checked') && detectNumber.indexOf('.') == -1 && parsedInt == i && detectNumber.length < 3) {
                     skipOver = true;
                     if (DEBUG) console.log("found page number");
@@ -648,15 +666,15 @@ $(function () {
         }
     }
     function ignoreLoop(textContent) {
-        var nastyWord = false;
-        var charCount = 0;
-        var firstChars = [];
-        for (var j = 0; j < textContent.items.length; j++) {
+        let nastyWord = false;
+        let charCount = 0;
+        let firstChars = [];
+        for (let j = 0; j < textContent.items.length; j++) {
             if (textContent.items[j].str.substring(0, 1).match(/[a-z]/i) || textContent.items[j].str.substring(1, 2).match(/[a-z]/i)) {
             } else {
                 firstChars.push(textContent.items[j].str.substring(0, 2));
             }
-            for (var k = 0; k < nastyWords.length; k++) {
+            for (let k = 0; k < nastyWords.length; k++) {
                 if (nastyWords[k].length > 1 && textContent.items[j].str.indexOf(nastyWords[k]) != -1) {
                     nastyWord = true;
                     break;
@@ -673,7 +691,7 @@ $(function () {
     }
     function findBadWords(textItem, checkLength) {
         if(badWords[0]=="")return false;
-        for (var k = 0; k < badWords.length; k++) {
+        for (let k = 0; k < badWords.length; k++) {
             if (textItem.indexOf(badWords[k]) != -1 && (badWords[k].length >= textItem.length / 2 || !checkLength)) {
                 return true;
 
@@ -682,29 +700,30 @@ $(function () {
         return false;
     }
     function getPageText(pdf, pageNumber, excludeStart, excludeEnd, ignore, callback, detectedHeaders) {
-        var finalText = "";
-        var addTab = false;
-        var headerDelim = ($('#headerDelim').is(':checked')) ? true : false;
+        let finalText = "";
+        let addTab = false;
+        let headerDelim = ($('#headerDelim').is(':checked')) ? true : false;
         pdf.getPage(pageNumber).then(function (page) {
             page.getTextContent().then(function (textContent) {
-                var split1 = splitters.get(1);
-                var split2 = splitters.get(2);
-                var split3 = splitters.get(3);
+                let split1 = splitters.get(1);
+                let split2 = splitters.get(2);
+                let split3 = splitters.get(3);
+                splitters.flushHeights();
                 split1 = splitter_detectNumbers(split1);
                 split2 = splitter_detectNumbers(split2);
                 split3 = splitter_detectNumbers(split3);
-                var headerSemi = -1;
-                var detectHeader_result = detectHeader(textContent, headerSemi);
+                let headerSemi = -1;
+                let detectHeader_result = detectHeader(textContent, headerSemi);
                 headerSemi = detectHeader_result['headerSemi'];
                 textContent = detectHeader_result['textContent'];
-                var numSearch = [1];
-                var ignored = false;
-                var charCount = 0;
-                var nastyWord = false;
-                var ignoreLoop_result = ignoreLoop(textContent);
+                let numSearch = [1];
+                let ignored = false;
+                let charCount = 0;
+                let nastyWord = false;
+                let ignoreLoop_result = ignoreLoop(textContent);
                 nastyWord = ignoreLoop_result['nastyWord'];
                 charCount = ignoreLoop_result['charCount'];
-                var firstChars = ignoreLoop_result['firstChars'];
+                let firstChars = ignoreLoop_result['firstChars'];
                 if (charCount < ignore || nastyWord) {
                     ignored = true;
                 }
@@ -712,7 +731,7 @@ $(function () {
                 if (detectedHeaders && typeof detectedHeaders == "object") {
                     detectedHeaders = updateDetectedHeaders(textContent.items, detectedHeaders);
                 }
-                var splitterCount = 0;
+                let splitterCount = 0;
                 if (split3.length > 0 && split3[0] != "") {
                     splitterCount = 3;
                 } else if (split2.length > 0 && split2[0] != "") {
@@ -720,16 +739,42 @@ $(function () {
                 } else if (split1.length > 0 && split1[0] != "") {
                     splitterCount = 1;
                 }
-                var pageText = "";
-                for (var j = excludeStart; j < textContent.items.length - excludeEnd; j++) {
-                    var detectNumber = textContent.items[j].str.replace(/ /g, "");
-                    var parsedInt = parseInt(detectNumber);
+                let pageText = "";
+                for (let j = excludeStart; j < textContent.items.length - excludeEnd; j++) {
+                    let detectNumber = textContent.items[j].str.replace(/ /g, "");
+                    let parsedInt = parseInt(detectNumber);
+                    if(protectNested){
+                        let itemTxt=textContent.items[j].str;
+                        let found1=foundSplitter(itemTxt,split1);
+                        let found2=foundSplitter(itemTxt,split2);
+                        if( found1>-1|| found2>-1){
+                            
+                            if(found1>-1){
+                                if(splitters.splitterHeightExists(1,found1)){
+                                    if(splitters.getSplitterHeight(1,found1)>textContent.items[j].height){
+                                        textContent.items[j].str=splitterReplace(split1,itemTxt,bullet,3);
+                                    }
+                                }else{
+                                    splitters.setSplitterHeight(1,found1,textContent.items[j].height);
+                                }
+                            }else if(found2>-1){
+                                if(splitters.splitterHeightExists(2,found2)){
+                                    if(splitters.getSplitterHeight(2,found2)>textContent.items[j].height){
+                                        textContent.items[j].str=splitterReplace(split2,itemTxt,bullet,4);
+                                    }
+                                }else{
+                                    splitters.setSplitterHeight(2,found2,textContent.items[j].height);
+                                }
+                            }
+                        }
+                    }
+                    
                     if ($('#pageNumberDetection').is(':checked') && detectNumber.indexOf('.') == -1 && parsedInt == pageNumber && detectNumber.length < 3) {
                         if (j == headerSemi) headerSemi++;
                         continue;
                     } else {
-                        var textItem = textContent.items[j].str;
-                        var remove = findBadWords(textItem,false);
+                        let textItem = textContent.items[j].str;
+                        let remove = findBadWords(textItem,false);
                         if (remove) {
                             if (j == headerSemi) headerSemi++;
                         } else {
@@ -744,7 +789,7 @@ $(function () {
                                 addTab = false;
                             }
                             if ((split3.indexOf('NUM') != -1 || split2.indexOf('NUM') != -1 || split1.indexOf('NUM') != -1) && textItem.length > 3) {
-                                var findProtectNumbers_result = findProtectNumbers(textItem, numSearch);
+                                let findProtectNumbers_result = findProtectNumbers(textItem, numSearch);
                                 textItem = findProtectNumbers_result['text'];
                                 numSearch = findProtectNumbers_result['numSearch'];
                             }
@@ -784,13 +829,13 @@ $(function () {
         });
     }
     function validate(text, split1) {
-        var slides = text.split(quizletEndPage);
+        let slides = text.split(quizletEndPage);
         if (slides.length == 0) return text;
-        var title = "";
+        let title = "";
         if (slides.length == 1) {
             //replace first bullet point and return
-            var lowestIndex = -1;
-            for (var i = 0; i < split1.length; i++) {
+            let lowestIndex = -1;
+            for (let i = 0; i < split1.length; i++) {
                 if (text.indexOf(split1[i]) != -1) {
                     lowestIndex = text.indexOf(split1[i]);
                 }
@@ -806,7 +851,7 @@ $(function () {
             title += ": "
             slides.shift();
         }
-        var madeTitleSlide = -1;
+        let madeTitleSlide = -1;
         for (x in slides) {
 
             while (occurrences(slides[x], quizletHeader) > 1) {
@@ -853,7 +898,7 @@ $(function () {
         return slides.join(quizletEndPage);
         function replaceLastInstance(badtext, str, replacer) {
             if (!replacer) replacer = "";
-            var charpos = str.lastIndexOf(badtext);
+            let charpos = str.lastIndexOf(badtext);
             if (charpos < 0) return str;
             ptone = str.substring(0, charpos);
             pttwo = str.substring(charpos + (badtext.length));
@@ -892,17 +937,17 @@ $(function () {
         return detectedHeaders;
     }
     function findProtectNumbers(textItem, numSearch) {
-        for (var index = 0; index <= numSearch.length; index++) {
+        for (let index = 0; index <= numSearch.length; index++) {
             if (textItem.indexOf(numSearch[index] + $('#numDelim').val()) != -1) {
                 if (DEBUG) console.log(numSearch[index] + " found in", textItem);
                 textItem = textItem.replace(numSearch[index] + $('#numDelim').val(), numSearch[index] + "ACTUAL;;NUM" + $('#numDelim').val());
                 numSearch[index]++;
             }
         }
-        var keepReplacing = true;
+        let keepReplacing = true;
         while (keepReplacing) {
             keepReplacing = false;
-            for (var protectNum = 100; protectNum > 0; protectNum--) {
+            for (let protectNum = 100; protectNum > 0; protectNum--) {
                 if (textItem.indexOf(protectNum + $('#numDelim').val()) != -1) {
                     keepReplacing = true;
                     if (DEBUG) console.log(protectNum + " protected in", textItem);
@@ -917,7 +962,7 @@ $(function () {
     }
     
     function updateResult(text) {
-        var convertedText = convertText(text);
+        let convertedText = convertText(text);
         
         if(quizletFormat){
             $('#result').hide();
@@ -934,14 +979,14 @@ $(function () {
     }
     
     function convertText(userText) {
-        // var useSuggestedSplitters = false;
-        var split1 = splitters.get(1);
-        var split2 = splitters.get(2);
-        var split3 = splitters.get(3);
+        // let useSuggestedSplitters = false;
+        let split1 = splitters.get(1);
+        let split2 = splitters.get(2);
+        let split3 = splitters.get(3);
         userText = splitterProcess(userText, bullet, split1, split2, split3);
-        var userTextArray = userText.split('\n');
-        var elementsToRemove = [];
-        for (var i = 0; i < userTextArray.length; i++) {
+        let userTextArray = userText.split('\n');
+        let elementsToRemove = [];
+        for (let i = 0; i < userTextArray.length; i++) {
             while (userTextArray[i].indexOf(' ') == 0) {//removing leading spaces
                 userTextArray[i] = userTextArray[i].replace(' ', '');
             }
@@ -951,10 +996,10 @@ $(function () {
         }
         // console.log(elementsToRemove);
         // console.log(userTextArray);
-        for (var i = elementsToRemove.length - 1; i >= 0; i--) {
+        for (let i = elementsToRemove.length - 1; i >= 0; i--) {
             userTextArray.splice(elementsToRemove[i], 1);
         }
-        var userTextArray_joined = userTextArray.join('\n');
+        let userTextArray_joined = userTextArray.join('\n');
         userTextArray_joined = userTextArray_joined.replace(/PLA.'CEHOLDER/g, '');
         return userTextArray_joined;
     }
@@ -967,10 +1012,10 @@ $(function () {
         return text;
     }
     function splitterReplace_Num(text, numDelim, replacer, replacerRepeat) {
-        var keepReplacing = true;
+        let keepReplacing = true;
         while (keepReplacing) {
             keepReplacing = false;
-            for (var i = 100; i > 0; i--) {
+            for (let i = 100; i > 0; i--) {
                 if (text.indexOf(i + numDelim) != -1) keepReplacing = true;
                 text = text.replace(i + numDelim, "\n" + replacer.repeat(replacerRepeat));
             }
@@ -981,8 +1026,8 @@ $(function () {
         split1 = splitter_detectNumbers(split1);
         split2 = splitter_detectNumbers(split2);
 
-        var numDelim = $('#numDelim').val();
-        var splitterCount = 0;
+        let numDelim = $('#numDelim').val();
+        let splitterCount = 0;
         if (split2.length > 0 && split2[0] != "") {
             splitterCount = 2;
         } else if (split1.length > 0 && split1[0] != "") {
@@ -999,8 +1044,8 @@ $(function () {
             split2.push("⎠");
         }
         while (true) {
-            var index1 = foundSplitter(userText, split1);
-            var index2 = foundSplitter(userText, split2);
+            let index1 = foundSplitter(userText, split1);
+            let index2 = foundSplitter(userText, split2);
             if (index1 == -1 || index2 == -1) break;
             if (index2 < index1) {
                 userText = userText.substr(0, index2) + '\n' + bullet + userText.substr(index2 + 1);
@@ -1015,23 +1060,24 @@ $(function () {
         userText = splitterReplace(["⎠"], userText, "", 1);//flushing remaining whatever this thing is
 
         return userText;
-        function foundSplitter(text, splitters) {
-            var lowestIndex = -1;
-            for (x in splitters) {
-                if (text.indexOf(splitters[x]) != -1) {
-                    lowestIndex = text.indexOf(splitters[x]);
-                }
+        
+    }
+    function foundSplitter(text, splitters) {
+        let lowestIndex = -1;
+        for (x in splitters) {
+            if (text.indexOf(splitters[x]) != -1) {
+                lowestIndex = text.indexOf(splitters[x]);
             }
-            return lowestIndex;
         }
+        return lowestIndex;
     }
     function splitterProcess(userText, replacer, split1, split2, split3) {
         split1 = splitter_detectNumbers(split1);
         split2 = splitter_detectNumbers(split2);
         split3 = splitter_detectNumbers(split3);
 
-        var numDelim = $('#numDelim').val();
-        var splitterCount = 0;
+        let numDelim = $('#numDelim').val();
+        let splitterCount = 0;
         if (split3.length > 0 && split3[0] != "") {
             splitterCount = 3;
         } else if (split2.length > 0 && split2[0] != "") {
@@ -1063,12 +1109,12 @@ $(function () {
     }
 
     //drag and drop
-    var lastTarget = null;
+    let lastTarget = null;
 
     function isFile(evt) {
-        var dt = evt.dataTransfer;
+        let dt = evt.dataTransfer;
 
-        for (var i = 0; i < dt.types.length; i++) {
+        for (let i = 0; i < dt.types.length; i++) {
             if (dt.types[i] === "Files") {
                 return true;
             }
@@ -1101,8 +1147,8 @@ $(function () {
         document.getElementById('dropzone').style.visibility = "hidden";
         document.getElementById('dropzone').style.opacity = 0;
         if (e.dataTransfer.files.length == 1) {
-            var fileName = (e.dataTransfer.files[0]) ? e.dataTransfer.files[0].name : "Select file (or drag and drop)";
-            var userPDF = e.dataTransfer.files[0];
+            let fileName = (e.dataTransfer.files[0]) ? e.dataTransfer.files[0].name : "Select file (or drag and drop)";
+            let userPDF = e.dataTransfer.files[0];
             if (userPDF.type != "application/pdf") {
                 console.error(userPDF.name, "is not a pdf file.")
                 alert(userPDF.name + " is not a pdf file.");
@@ -1122,8 +1168,8 @@ $(function () {
     });
 });
 function join_ignoreEmpty(arr,joiner){
-    var text="";
-    for(var i=0;i<arr.length;i++){
+    let text="";
+    for(let i=0;i<arr.length;i++){
         if(arr[i]!=""&&i!=(arr.length-1)){
             text+=arr[i];
             text+=joiner;
@@ -1139,20 +1185,20 @@ function removeFC(index){
     $('#flashcard'+index).hide('100');
 }
 function updateElementsToChange(value){
-    var index=parseInt(value.id.replace('flashcard-A','').replace('flashcard-B',''));
-    var elems=quizletFlashcards.getElementsToChange();
+    let index=parseInt(value.id.replace('flashcard-A','').replace('flashcard-B',''));
+    let elems=quizletFlashcards.getElementsToChange();
     if(elems.indexOf(index)==-1){
         elems.push(index);
     }
     quizletFlashcards.setElementsToChange(elems);
 }
 function updateFC(index){
-    var elems=quizletFlashcards.getElementsToChange();
+    let elems=quizletFlashcards.getElementsToChange();
     if(index!=-1&& elems.indexOf(index)==-1){
         elems.push(index);
     }
-    for(var i=0;i<elems.length;i++){
-        var card=$('#flashcard-A'+elems[i]).val()+quizletHeader+$('#flashcard-B'+elems[i]).val();
+    for(let i=0;i<elems.length;i++){
+        let card=$('#flashcard-A'+elems[i]).val()+quizletHeader+$('#flashcard-B'+elems[i]).val();
         if(card!=quizletFlashcards.getCard(elems[i])){
             quizletFlashcards.setCard(elems[i],card);
         }
@@ -1161,13 +1207,13 @@ function updateFC(index){
     showAsFlashcards(quizletFlashcards);
 }
 function showAsFlashcards(fc){
-    var cards=fc.getCards();
+    let cards=fc.getCards();
     $('#flashCards').html('');
-    for(var i=0;i<cards.length;i++){
+    for(let i=0;i<cards.length;i++){
         if(cards[i].length<4)continue;//will get handled by quizlet
-        var card_split=cards[i].split(quizletHeader)
-        var btnHTML="<div class='t-center mt-1'><button onclick=removeFC(this.value) class='btn btn-danger flashcard-btn mr-1' value='"+i+"'>Remove</button><button onclick=updateFC(this.value) class='btn btn-success flashcard-btn ml-1 card-textarea' value='"+i+"'>Update</button></div>"
-        var cardHTML_left="<div class='card-header'><textarea class='form-control rounded-0 card-textarea' onchange=updateElementsToChange(this) id='flashcard-A"+i+"'>";
+        let card_split=cards[i].split(quizletHeader)
+        let btnHTML="<div class='t-center mt-1'><button onclick=removeFC(this.value) class='btn btn-danger flashcard-btn mr-1' value='"+i+"'>Remove</button><button onclick=updateFC(this.value) class='btn btn-success flashcard-btn ml-1 card-textarea' value='"+i+"'>Update</button></div>"
+        let cardHTML_left="<div class='card-header'><textarea class='form-control rounded-0 card-textarea' onchange=updateElementsToChange(this) id='flashcard-A"+i+"'>";
         // cardHTML_left+=btnHTML;
         if(card_split[0].indexOf('\n')<1)card_split[0]=card_split[0].replace('\n','');//getting rid of extra newlines from previous replacement
         cardHTML_left+=card_split[0];
@@ -1175,18 +1221,18 @@ function showAsFlashcards(fc){
         cardHTML_left+=card_split[0];
         cardHTML_left+="</span></div>";
         card_split.shift();
-        var cardHTML_right="<div class='card-body'><textarea class='form-control rounded-0 card-textarea' onchange=updateElementsToChange(this) id='flashcard-B"+i+"'>";
+        let cardHTML_right="<div class='card-body'><textarea class='form-control rounded-0 card-textarea' onchange=updateElementsToChange(this) id='flashcard-B"+i+"'>";
         cardHTML_right+=(card_split.length>0)?card_split.join(" "):"-";
         cardHTML_right+="</textarea><span class='card-static'>"
         cardHTML_right+=(card_split.length>0)?card_split.join(" "):"-";
         cardHTML_right+="</span>"
         cardHTML_right+=btnHTML;
         cardHTML_right+="</div>";
-        var panelType=(i%2==0)?("card bg-light mb-3"):("card bg-dark text-white mb-3")
+        let panelType=(i%2==0)?("card bg-light mb-3"):("card bg-dark text-white mb-3")
         $('#flashCards').html($('#flashCards').html()+"<div id='flashcard"+i+"' class='"+panelType+"'>"+cardHTML_left+cardHTML_right+"</div>")
     }
     $('.card-textarea').hide();
-    isVisible=false;
+    fcViewIsVisible=false;
 }
 function occurrences(string, subString, allowOverlapping) {
 
@@ -1194,7 +1240,7 @@ function occurrences(string, subString, allowOverlapping) {
     subString += "";
     if (subString.length <= 0) return (string.length + 1);
 
-    var n = 0,
+    let n = 0,
         pos = 0,
         step = allowOverlapping ? 1 : subString.length;
 
